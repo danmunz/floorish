@@ -76,7 +76,7 @@ function AppInner() {
       <header className="app-header">
         <div className="app-logo">
           <span className="logo-icon">⌂</span>
-          <span className="logo-text">Floor Plan Studio</span>
+          <span className="logo-text">Floorish</span>
         </div>
         <FloorPlanLoader />
       </header>
