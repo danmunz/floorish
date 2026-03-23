@@ -1,0 +1,108 @@
+import { useCallback, useRef } from 'react';
+import { useAppState } from '../hooks/useAppState';
+import { v4 as uuid } from 'uuid';
+
+export function FloorPlanLoader() {
+  const { state, dispatch } = useAppState();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = useCallback(
+    (files: FileList | null) => {
+      if (!files) return;
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const url = URL.createObjectURL(file);
+        const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+        const id = uuid();
+        dispatch({
+          type: 'ADD_FLOOR_PLAN',
+          payload: {
+            id,
+            name,
+            imageUrl: url,
+            pixelsPerFoot: null,
+            calibrationPoints: null,
+            calibrationDistanceFt: null,
+          },
+        });
+      });
+    },
+    [dispatch]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles]
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  return (
+    <div className="floor-plan-loader">
+      {/* Floor plan tabs */}
+      {state.floorPlans.length > 0 && (
+        <div className="floor-tabs">
+          {state.floorPlans.map(fp => (
+            <div
+              key={fp.id}
+              className={`floor-tab ${fp.id === state.activeFloorPlanId ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_ACTIVE_FLOOR_PLAN', payload: fp.id })}
+            >
+              <span className="floor-tab-name">{fp.name}</span>
+              {fp.pixelsPerFoot && <span className="floor-tab-cal">✓</span>}
+              <button
+                className="floor-tab-close"
+                onClick={e => {
+                  e.stopPropagation();
+                  dispatch({ type: 'REMOVE_FLOOR_PLAN', payload: fp.id });
+                }}
+                title="Remove"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            className="floor-tab add-tab"
+            onClick={() => fileInputRef.current?.click()}
+            title="Add floor plan"
+          >
+            +
+          </button>
+        </div>
+      )}
+
+      {/* Drop zone (when no plans loaded) */}
+      {state.floorPlans.length === 0 && (
+        <div
+          className="drop-zone"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="drop-zone-content">
+            <div className="drop-zone-icon">🏠</div>
+            <div className="drop-zone-title">Drop floor plan images here</div>
+            <div className="drop-zone-sub">or click to browse</div>
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={e => handleFiles(e.target.files)}
+      />
+    </div>
+  );
+}
