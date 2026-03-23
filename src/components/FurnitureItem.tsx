@@ -41,11 +41,7 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
     node.scaleX(1);
     node.scaleY(1);
 
-    let rotation = node.rotation();
-    // Snap if shift is held (Konva doesn't expose modifier keys on transform end,
-    // so we snap any rotation that's within 2° of a 15° increment)
-    const snapped = snapAngle(rotation, 15);
-    if (Math.abs(rotation - snapped) < 3) rotation = snapped;
+    const rotation = snapAngle(node.rotation(), 15);
 
     dispatch({
       type: 'UPDATE_FURNITURE',
@@ -137,6 +133,8 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
         <Transformer
           ref={trRef}
           rotateEnabled={!item.locked}
+          rotationSnaps={Array.from({ length: 24 }, (_, i) => i * 15)}
+          rotationSnapTolerance={10}
           enabledAnchors={item.locked ? [] : [
             'top-left', 'top-right', 'bottom-left', 'bottom-right',
             'middle-left', 'middle-right', 'top-center', 'bottom-center',
