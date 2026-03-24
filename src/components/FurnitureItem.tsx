@@ -139,14 +139,16 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
             'top-left', 'top-right', 'bottom-left', 'bottom-right',
             'middle-left', 'middle-right', 'top-center', 'bottom-center',
           ]}
-          borderStroke="#3B82F6"
+          borderStroke="#264653"
           borderStrokeWidth={1.5 / stageScale}
-          anchorFill="#fff"
-          anchorStroke="#3B82F6"
-          anchorSize={8 / stageScale}
-          anchorCornerRadius={2 / stageScale}
-          rotateAnchorOffset={20 / stageScale}
-          padding={2}
+          anchorFill="#E9C46A"
+          anchorStroke="#264653"
+          anchorStrokeWidth={1.5 / stageScale}
+          anchorSize={14 / stageScale}
+          anchorCornerRadius={3 / stageScale}
+          rotateAnchorOffset={40 / stageScale}
+          rotateAnchorCursor="grab"
+          padding={4}
           boundBoxFunc={(_oldBox, newBox) => {
             if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) return _oldBox;
             return newBox;
