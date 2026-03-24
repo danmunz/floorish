@@ -11,6 +11,7 @@ const INITIAL_STATE: AppState = {
   calibration: { points: [], isActive: false, detectedDimensions: [], ocrProgress: 0, ocrRunning: false },
   measure: { points: [], distanceFt: null },
   drawPolygon: { vertices: [], isDrawing: false },
+  exportSelection: { start: null, rect: null },
   showGrid: true,
   gridSizeIn: 12,
   snapToGrid: false,
@@ -171,6 +172,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, stageScale: action.payload };
     case 'LOAD_STATE':
       return { ...state, ...action.payload };
+    case 'SET_EXPORT_SELECTION':
+      return { ...state, exportSelection: action.payload };
+    case 'CLEAR_EXPORT_SELECTION':
+      return { ...state, exportSelection: { start: null, rect: null }, toolMode: 'select' };
     case 'DUPLICATE_FURNITURE': {
       const src = state.furniture.find(f => f.id === action.payload);
       if (!src) return state;
@@ -205,7 +210,7 @@ const EPHEMERAL_ACTIONS = new Set([
   'SET_STAGE_POS', 'SET_STAGE_SCALE', 'SET_OCR_PROGRESS', 'SET_OCR_RUNNING',
   'SET_OCR_DIMENSIONS', 'ADD_CALIBRATION_POINT', 'ADD_MEASURE_POINT', 'ADD_DRAW_VERTEX',
   'SELECT_FURNITURE', 'SET_TOOL_MODE', 'SET_PLACING_PRESET', 'RESET_MEASURE',
-  'RESET_CALIBRATION_POINTS', 'UPDATE_FLOOR_PLAN',
+  'RESET_CALIBRATION_POINTS', 'UPDATE_FLOOR_PLAN', 'SET_EXPORT_SELECTION', 'CLEAR_EXPORT_SELECTION',
 ]);
 
 function undoReducer(undoState: UndoableState, action: UndoAction): UndoableState {

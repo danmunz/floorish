@@ -42,7 +42,12 @@ export interface PlacedFurniture {
   locked: boolean;
 }
 
-export type ToolMode = 'select' | 'calibrate' | 'measure' | 'draw-polygon' | 'place';
+export type ToolMode = 'select' | 'calibrate' | 'measure' | 'draw-polygon' | 'place' | 'export-select';
+
+export interface ExportSelection {
+  start: Point | null;
+  rect: { x: number; y: number; width: number; height: number } | null;
+}
 
 export interface CalibrationState {
   points: Point[];
@@ -78,6 +83,7 @@ export interface AppState {
   calibration: CalibrationState;
   measure: MeasureState;
   drawPolygon: DrawPolygonState;
+  exportSelection: ExportSelection;
   showGrid: boolean;
   gridSizeIn: number; // grid cell size in inches (default 12 = 1ft)
   snapToGrid: boolean;
@@ -114,4 +120,6 @@ export type AppAction =
   | { type: 'SET_STAGE_POS'; payload: Point }
   | { type: 'SET_STAGE_SCALE'; payload: number }
   | { type: 'LOAD_STATE'; payload: Partial<AppState> }
-  | { type: 'DUPLICATE_FURNITURE'; payload: string };
+  | { type: 'DUPLICATE_FURNITURE'; payload: string }
+  | { type: 'SET_EXPORT_SELECTION'; payload: ExportSelection }
+  | { type: 'CLEAR_EXPORT_SELECTION' };
