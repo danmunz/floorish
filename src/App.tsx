@@ -30,6 +30,13 @@ function AppInner() {
     }
   }, [user, isGuest, projectId]);
 
+  // When state is hydrated via import (LOAD_STATE), switch to canvas view
+  useEffect(() => {
+    if (showProjectPicker && state.floorPlans.length > 0) {
+      setShowProjectPicker(false);
+    }
+  }, [state.floorPlans.length, showProjectPicker]);
+
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {

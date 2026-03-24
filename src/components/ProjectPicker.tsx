@@ -13,6 +13,7 @@ import {
 } from '../lib/api';
 import { getFloorPlanImageUrl } from '../lib/storage';
 import { useAppState } from '../hooks/useAppState';
+import { usePersistence } from '../hooks/usePersistence';
 
 interface ProjectPickerProps {
   onProjectLoaded: (projectId: string) => void;
@@ -21,6 +22,7 @@ interface ProjectPickerProps {
 export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
   const { user } = useAuth();
   const { dispatch } = useAppState();
+  const { importLayout } = usePersistence();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -136,9 +138,20 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
     <div className="project-picker">
       <div className="project-picker-header">
         <h2 className="project-picker-title">Your Projects</h2>
-        <button className="btn-sm btn-primary" onClick={handleCreate}>
-          + New Project
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <label className="btn-sm btn-ghost" style={{ cursor: 'pointer' }}>
+            📂 Import
+            <input
+              type="file"
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={e => e.target.files?.[0] && importLayout(e.target.files[0])}
+            />
+          </label>
+          <button className="btn-sm btn-primary" onClick={handleCreate}>
+            + New Project
+          </button>
+        </div>
       </div>
 
       {error && (
