@@ -1,9 +1,12 @@
 import { useCallback, useRef } from 'react';
 import { useAppState } from '../hooks/useAppState';
+import { useAuth } from '../hooks/useAuth';
+import { uploadFloorPlanImage } from '../lib/storage';
 import { v4 as uuid } from 'uuid';
 
 export function FloorPlanLoader() {
   const { state, dispatch } = useAppState();
+  const { user, isGuest } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback(
@@ -25,9 +28,15 @@ export function FloorPlanLoader() {
             calibrationDistanceFt: null,
           },
         });
+        // Upload to Supabase Storage in background for authenticated users
+        if (user && !isGuest) {
+          uploadFloorPlanImage(file, user.id)
+            .then(path => dispatch({ type: 'UPDATE_FLOOR_PLAN', payload: { id, updates: { imagePath: path } } }))
+            .catch(err => console.error('Failed to upload floor plan image:', err));
+        }
       });
     },
-    [dispatch]
+    [dispatch, user, isGuest]
   );
 
   const handleDrop = useCallback(

@@ -7,6 +7,7 @@ export interface FloorPlan {
   id: string;
   name: string;
   imageUrl: string;
+  imagePath?: string | null;
   pixelsPerFoot: number | null;
   calibrationPoints: [Point, Point] | null;
   calibrationDistanceFt: number | null;
@@ -87,6 +88,7 @@ export interface AppState {
 
 export type AppAction =
   | { type: 'ADD_FLOOR_PLAN'; payload: FloorPlan }
+  | { type: 'UPDATE_FLOOR_PLAN'; payload: { id: string; updates: Partial<FloorPlan> } }
   | { type: 'REMOVE_FLOOR_PLAN'; payload: string }
   | { type: 'SET_ACTIVE_FLOOR_PLAN'; payload: string }
   | { type: 'SET_CALIBRATION'; payload: { floorPlanId: string; pixelsPerFoot: number; points: [Point, Point]; distanceFt: number } }

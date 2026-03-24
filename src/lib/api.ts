@@ -200,6 +200,7 @@ export function dbFloorPlanToApp(
     id: row.id as string,
     name: row.name as string,
     imageUrl,
+    imagePath: (row.image_path as string) ?? null,
     pixelsPerFoot: row.pixels_per_foot as number | null,
     calibrationPoints: row.calibration_points as [{ x: number; y: number }, { x: number; y: number }] | null,
     calibrationDistanceFt: row.calibration_distance_ft as number | null,

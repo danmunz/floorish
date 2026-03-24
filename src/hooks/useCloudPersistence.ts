@@ -57,6 +57,7 @@ export function useCloudPersistence(projectId: string | null) {
             id: fp.id,
             project_id: projectId,
             name: fp.name,
+            image_path: fp.imagePath ?? null,
             pixels_per_foot: fp.pixelsPerFoot,
             calibration_points: fp.calibrationPoints,
             calibration_distance_ft: fp.calibrationDistanceFt,

@@ -12,6 +12,7 @@ import { ProjectPicker } from './components/ProjectPicker';
 import { UserMenu } from './components/UserMenu';
 import { SharedView } from './components/SharedView';
 import { useCloudPersistence } from './hooks/useCloudPersistence';
+import { uploadFloorPlanImage } from './lib/storage';
 import './App.css';
 
 function AppInner() {
@@ -93,9 +94,15 @@ function AppInner() {
           type: 'ADD_FLOOR_PLAN',
           payload: { id, name, imageUrl: url, pixelsPerFoot: null, calibrationPoints: null, calibrationDistanceFt: null },
         });
+        // Upload to Supabase Storage in background for authenticated users
+        if (user && !isGuest) {
+          uploadFloorPlanImage(file, user.id)
+            .then(path => dispatch({ type: 'UPDATE_FLOOR_PLAN', payload: { id, updates: { imagePath: path } } }))
+            .catch(err => console.error('Failed to upload floor plan image:', err));
+        }
       });
     },
-    [dispatch]
+    [dispatch, user, isGuest]
   );
 
   return (

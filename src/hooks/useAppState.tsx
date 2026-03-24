@@ -27,6 +27,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
         floorPlans: [...state.floorPlans, action.payload],
         activeFloorPlanId: state.activeFloorPlanId ?? action.payload.id,
       };
+    case 'UPDATE_FLOOR_PLAN':
+      return {
+        ...state,
+        floorPlans: state.floorPlans.map(fp =>
+          fp.id === action.payload.id ? { ...fp, ...action.payload.updates } : fp
+        ),
+      };
     case 'REMOVE_FLOOR_PLAN':
       return {
         ...state,
@@ -198,7 +205,7 @@ const EPHEMERAL_ACTIONS = new Set([
   'SET_STAGE_POS', 'SET_STAGE_SCALE', 'SET_OCR_PROGRESS', 'SET_OCR_RUNNING',
   'SET_OCR_DIMENSIONS', 'ADD_CALIBRATION_POINT', 'ADD_MEASURE_POINT', 'ADD_DRAW_VERTEX',
   'SELECT_FURNITURE', 'SET_TOOL_MODE', 'SET_PLACING_PRESET', 'RESET_MEASURE',
-  'RESET_CALIBRATION_POINTS',
+  'RESET_CALIBRATION_POINTS', 'UPDATE_FLOOR_PLAN',
 ]);
 
 function undoReducer(undoState: UndoableState, action: UndoAction): UndoableState {
