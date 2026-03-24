@@ -13,7 +13,7 @@ export interface FloorPlan {
   calibrationDistanceFt: number | null;
 }
 
-export type FurnitureShape = 'rect' | 'polygon';
+export type FurnitureShape = 'rect' | 'ellipse' | 'polygon';
 
 export interface FurniturePreset {
   id: string;

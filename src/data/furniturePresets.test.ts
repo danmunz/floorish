@@ -13,7 +13,7 @@ describe('furniturePresets', () => {
       expect(preset.name).toBeTruthy();
       expect(preset.widthIn).toBeGreaterThan(0);
       expect(preset.depthIn).toBeGreaterThan(0);
-      expect(['rect', 'polygon']).toContain(preset.shape);
+      expect(['rect', 'ellipse', 'polygon']).toContain(preset.shape);
       expect(preset.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
     }
   });

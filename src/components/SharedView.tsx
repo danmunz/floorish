@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Stage, Layer, Image as KonvaImage, Line, Text as KonvaText, Rect, Group } from 'react-konva';
+import { Stage, Layer, Image as KonvaImage, Line, Text as KonvaText, Rect, Ellipse, Group } from 'react-konva';
 import {
   fetchProjectByShareToken,
   fetchFloorPlans,
@@ -163,22 +163,33 @@ export function SharedView() {
             )}
             {activeFurniture.map((f) => (
               <Group key={f.id} x={f.x} y={f.y} rotation={f.rotation}>
-                {f.shape === 'rect' ? (
+                {f.shape === 'ellipse' ? (
+                  <Ellipse
+                    x={f.widthPx / 2}
+                    y={f.heightPx / 2}
+                    radiusX={f.widthPx / 2}
+                    radiusY={f.heightPx / 2}
+                    fill={f.color}
+                    opacity={0.7}
+                    stroke={f.color}
+                    strokeWidth={1.5}
+                  />
+                ) : f.shape === 'polygon' ? (
+                  <Line
+                    points={f.vertices ?? []}
+                    fill={f.color}
+                    opacity={0.7}
+                    closed
+                    stroke={f.color}
+                    strokeWidth={1.5}
+                  />
+                ) : (
                   <Rect
                     width={f.widthPx}
                     height={f.heightPx}
                     fill={f.color}
                     opacity={0.7}
                     cornerRadius={4}
-                    stroke={f.color}
-                    strokeWidth={1.5}
-                  />
-                ) : (
-                  <Line
-                    points={f.vertices ?? []}
-                    fill={f.color}
-                    opacity={0.7}
-                    closed
                     stroke={f.color}
                     strokeWidth={1.5}
                   />

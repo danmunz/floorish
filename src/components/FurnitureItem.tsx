@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { Group, Rect, Line, Text, Transformer } from 'react-konva';
+import { Group, Rect, Ellipse, Line, Text, Transformer } from 'react-konva';
 import Konva from 'konva';
 import { useAppState } from '../hooks/useAppState';
 import type { PlacedFurniture } from '../types';
@@ -68,37 +68,49 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
   );
 
   // Build shape
-  const shape =
-    item.shape === 'polygon' && item.vertices
-      ? (() => {
-          // Vertices are normalized 0–1; scale to widthPx × heightPx
-          const scaled = [];
-          for (let i = 0; i < item.vertices.length; i += 2) {
-            scaled.push(item.vertices[i] * item.widthPx);
-            scaled.push(item.vertices[i + 1] * item.heightPx);
-          }
-          return (
-            <Line
-              points={scaled}
-              closed
-              fill={item.color + '55'}
-              stroke={item.color}
-              strokeWidth={Math.max(1, 1.5 / stageScale)}
-            />
-          );
-        })()
-      : (
-          <Rect
-            width={item.widthPx}
-            height={item.heightPx}
-            fill={item.color + '55'}
-            stroke={item.color}
-            strokeWidth={Math.max(1, 1.5 / stageScale)}
-            cornerRadius={2}
-          />
-        );
+  const strokeW = Math.max(1, 1.5 / stageScale);
+  let shape;
+  if (item.shape === 'polygon' && item.vertices) {
+    const scaled = [];
+    for (let i = 0; i < item.vertices.length; i += 2) {
+      scaled.push(item.vertices[i] * item.widthPx);
+      scaled.push(item.vertices[i + 1] * item.heightPx);
+    }
+    shape = (
+      <Line
+        points={scaled}
+        closed
+        fill={item.color + '55'}
+        stroke={item.color}
+        strokeWidth={strokeW}
+      />
+    );
+  } else if (item.shape === 'ellipse') {
+    shape = (
+      <Ellipse
+        x={item.widthPx / 2}
+        y={item.heightPx / 2}
+        radiusX={item.widthPx / 2}
+        radiusY={item.heightPx / 2}
+        fill={item.color + '55'}
+        stroke={item.color}
+        strokeWidth={strokeW}
+      />
+    );
+  } else {
+    shape = (
+      <Rect
+        width={item.widthPx}
+        height={item.heightPx}
+        fill={item.color + '55'}
+        stroke={item.color}
+        strokeWidth={strokeW}
+        cornerRadius={2}
+      />
+    );
+  }
 
-  const labelFontSize = Math.max(8, Math.min(14, item.widthPx * 0.12));
+  const labelFontSize = Math.max(11, Math.min(14, item.widthPx * 0.12));
 
   return (
     <>
@@ -144,9 +156,9 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
           anchorFill="#E9C46A"
           anchorStroke="#264653"
           anchorStrokeWidth={1.5 / stageScale}
-          anchorSize={14 / stageScale}
-          anchorCornerRadius={3 / stageScale}
-          rotateAnchorOffset={40 / stageScale}
+          anchorSize={8 / stageScale}
+          anchorCornerRadius={2 / stageScale}
+          rotateAnchorOffset={20 / stageScale}
           rotateAnchorCursor="grab"
           padding={4}
           boundBoxFunc={(_oldBox, newBox) => {

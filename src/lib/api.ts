@@ -218,7 +218,7 @@ export function dbFurnitureToApp(row: Record<string, unknown>): PlacedFurniture 
     heightPx: row.height_px as number,
     rotation: row.rotation as number,
     color: row.color as string,
-    shape: row.shape as 'rect' | 'polygon',
+    shape: row.shape as 'rect' | 'ellipse' | 'polygon',
     vertices: row.vertices as number[] | undefined,
     floorPlanId: row.floor_plan_id as string,
     locked: row.locked as boolean,

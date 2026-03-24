@@ -23,7 +23,7 @@ export const furniturePresets: FurniturePreset[] = [
 
   // ── Tables ──
   { id: 'dining-rect', category: 'Tables',  name: 'Dining Table (Rect)', widthIn: 72, depthIn: 36,  shape: 'rect', color: COLORS.table },
-  { id: 'dining-round',category: 'Tables',  name: 'Dining Table (Round)',widthIn: 48, depthIn: 48,  shape: 'rect', color: COLORS.table },
+  { id: 'dining-round',category: 'Tables',  name: 'Dining Table (Round)',widthIn: 48, depthIn: 48,  shape: 'ellipse', color: COLORS.table },
   { id: 'coffee-table',category: 'Tables',  name: 'Coffee Table',       widthIn: 48,  depthIn: 24,  shape: 'rect', color: COLORS.table },
   { id: 'side-table',  category: 'Tables',  name: 'Side Table',         widthIn: 22,  depthIn: 22,  shape: 'rect', color: COLORS.table },
   { id: 'console',     category: 'Tables',  name: 'Console Table',      widthIn: 48,  depthIn: 16,  shape: 'rect', color: COLORS.table },
