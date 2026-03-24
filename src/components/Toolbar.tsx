@@ -1,10 +1,14 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import { usePersistence } from '../hooks/usePersistence';
+import { useAuth } from '../hooks/useAuth';
+import { createShare } from '../lib/api';
 
-export function Toolbar() {
+export function Toolbar({ projectId }: { projectId?: string | null }) {
   const { state, dispatch, undo, redo, canUndo, canRedo } = useAppState();
   const { exportLayout, importLayout } = usePersistence();
+  const { user, isGuest } = useAuth();
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
 
   const activeFloorPlan = state.floorPlans.find(fp => fp.id === state.activeFloorPlanId);
   const ppf = activeFloorPlan?.pixelsPerFoot ?? null;
@@ -12,6 +16,20 @@ export function Toolbar() {
   const setMode = useCallback((mode: typeof state.toolMode) => {
     dispatch({ type: 'SET_TOOL_MODE', payload: mode });
   }, [dispatch]);
+
+  const handleShare = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const token = await createShare(projectId);
+      const url = `${window.location.origin}/share/${token}`;
+      await navigator.clipboard.writeText(url);
+      setShareStatus('Link copied!');
+      setTimeout(() => setShareStatus(null), 2000);
+    } catch {
+      setShareStatus('Failed to create link');
+      setTimeout(() => setShareStatus(null), 2000);
+    }
+  }, [projectId]);
 
   return (
     <div className="toolbar">
@@ -94,6 +112,12 @@ export function Toolbar() {
       <div className="toolbar-spacer" />
 
       <div className="toolbar-group">
+        {user && !isGuest && projectId && (
+          <button className="tool-btn" onClick={handleShare} title="Share Project">
+            <span className="tool-icon">🔗</span>
+            <span className="tool-label">{shareStatus ?? 'Share'}</span>
+          </button>
+        )}
         <button className="tool-btn" onClick={exportLayout} title="Export Layout">
           <span className="tool-icon">💾</span>
           <span className="tool-label">Export</span>
