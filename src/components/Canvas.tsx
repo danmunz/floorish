@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Stage, Layer, Image as KonvaImage, Line, Circle, Text, Rect, Group } from 'react-konva';
 import Konva from 'konva';
 import { useAppState } from '../hooks/useAppState';
@@ -7,12 +7,22 @@ import { inchesToPixels, pixelDistance, formatFeetInches, snapToGridValue } from
 import { v4 as uuid } from 'uuid';
 import type { PlacedFurniture } from '../types';
 
-export function Canvas() {
+export interface CanvasHandle {
+  stage: Konva.Stage | null;
+  floorImage: HTMLImageElement | null;
+}
+
+export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
   const { state, dispatch } = useAppState();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 600 });
   const [floorImage, setFloorImage] = useState<HTMLImageElement | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    get stage() { return stageRef.current; },
+    get floorImage() { return floorImage; },
+  }), [floorImage]);
 
   const activeFloorPlan = state.floorPlans.find(fp => fp.id === state.activeFloorPlanId);
   const ppf = activeFloorPlan?.pixelsPerFoot ?? null;
@@ -280,8 +290,69 @@ export function Canvas() {
     state.toolMode === 'calibrate' ? 'crosshair' :
     state.toolMode === 'measure' ? 'crosshair' :
     state.toolMode === 'draw-polygon' ? 'crosshair' :
+    state.toolMode === 'export-select' ? 'crosshair' :
     state.toolMode === 'place' ? 'cell' :
     'default';
+
+  // Export selection rect drawing
+  const handleMouseDown = useCallback(
+    (_e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (state.toolMode !== 'export-select') return;
+      const pos = pointerToImageCoords();
+      if (!pos) return;
+      dispatch({ type: 'SET_EXPORT_SELECTION', payload: { start: pos, rect: null } });
+    },
+    [state.toolMode, pointerToImageCoords, dispatch]
+  );
+
+  const handleMouseMove = useCallback(
+    (_e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (state.toolMode !== 'export-select' || !state.exportSelection.start) return;
+      const pos = pointerToImageCoords();
+      if (!pos) return;
+      const s = state.exportSelection.start;
+      dispatch({
+        type: 'SET_EXPORT_SELECTION',
+        payload: {
+          start: s,
+          rect: {
+            x: Math.min(s.x, pos.x),
+            y: Math.min(s.y, pos.y),
+            width: Math.abs(pos.x - s.x),
+            height: Math.abs(pos.y - s.y),
+          },
+        },
+      });
+    },
+    [state.toolMode, state.exportSelection.start, pointerToImageCoords, dispatch]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (state.toolMode !== 'export-select') return;
+    // Selection is finalized — toolbar will read it from state
+    // Just clear the start point so we stop tracking
+    if (state.exportSelection.rect) {
+      dispatch({
+        type: 'SET_EXPORT_SELECTION',
+        payload: { start: null, rect: state.exportSelection.rect },
+      });
+    }
+  }, [state.toolMode, state.exportSelection.rect, dispatch]);
+
+  // Selection rectangle overlay
+  const selectionOverlay = state.exportSelection.rect && state.toolMode === 'export-select' ? (
+    <Rect
+      x={state.exportSelection.rect.x}
+      y={state.exportSelection.rect.y}
+      width={state.exportSelection.rect.width}
+      height={state.exportSelection.rect.height}
+      stroke="#E9C46A"
+      strokeWidth={2 / state.stageScale}
+      dash={[8 / state.stageScale, 4 / state.stageScale]}
+      fill="rgba(233, 196, 106, 0.1)"
+      listening={false}
+    />
+  ) : null;
 
   return (
     <div ref={containerRef} className="canvas-container" style={{ cursor: cursorStyle }}>
@@ -308,6 +379,9 @@ export function Canvas() {
         }}
         onWheel={handleWheel}
         onClick={handleStageClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onDblClick={handleDblClick}
         onDblTap={handleDblClick}
       >
@@ -342,11 +416,12 @@ export function Canvas() {
           ))}
         </Layer>
 
-        {/* Overlay layer (calibration, measure, draw) */}
+        {/* Overlay layer (calibration, measure, draw, export selection) */}
         <Layer listening={false}>
           {calMarkers}
           {measureMarkers}
           {polygonPreview}
+          {selectionOverlay}
         </Layer>
       </Stage>
 
@@ -356,4 +431,4 @@ export function Canvas() {
       </div>
     </div>
   );
-}
+});

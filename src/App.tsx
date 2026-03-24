@@ -1,8 +1,9 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useAppState } from './hooks/useAppState';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Canvas } from './components/Canvas';
+import type { CanvasHandle } from './components/Canvas';
 import { FurniturePalette } from './components/FurniturePalette';
 import { CalibrationPanel } from './components/CalibrationPanel';
 import { FloorPlanLoader } from './components/FloorPlanLoader';
@@ -21,6 +22,7 @@ function AppInner() {
   const { user, isGuest } = useAuth();
   const [projectId, setProjectId] = useState<string | null>(null);
   const [showProjectPicker, setShowProjectPicker] = useState(false);
+  const canvasRef = useRef<CanvasHandle>(null);
 
   // Cloud autosave for authenticated users
   useCloudPersistence(projectId);
@@ -138,7 +140,7 @@ function AppInner() {
         <UserMenu />
       </header>
 
-      {!showProjectPicker && <Toolbar projectId={projectId} />}
+      {!showProjectPicker && <Toolbar projectId={projectId} canvasRef={canvasRef} />}
 
       {showProjectPicker && !isGuest ? (
         <div className="app-body">
@@ -156,7 +158,7 @@ function AppInner() {
             <FurniturePalette />
           </aside>
           <main className="main-canvas">
-            <Canvas />
+            <Canvas ref={canvasRef} />
           </main>
         </div>
       )}

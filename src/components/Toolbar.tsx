@@ -1,20 +1,111 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import { usePersistence } from '../hooks/usePersistence';
 import { useAuth } from '../hooks/useAuth';
 import { createShare } from '../lib/api';
+import { exportAsPng, exportAsPdf } from '../utils/export';
+import type { CanvasHandle } from './Canvas';
+import type Konva from 'konva';
 
-export function Toolbar({ projectId }: { projectId?: string | null }) {
+export function Toolbar({ projectId, canvasRef }: { projectId?: string | null; canvasRef?: React.RefObject<CanvasHandle | null> }) {
   const { state, dispatch, undo, redo, canUndo, canRedo } = useAppState();
   const { exportLayout, importLayout } = usePersistence();
   const { user, isGuest } = useAuth();
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   const activeFloorPlan = state.floorPlans.find(fp => fp.id === state.activeFloorPlanId);
   const ppf = activeFloorPlan?.pixelsPerFoot ?? null;
+  const hasSelection = state.exportSelection.rect != null && state.toolMode === 'export-select';
 
   const setMode = useCallback((mode: typeof state.toolMode) => {
     dispatch({ type: 'SET_TOOL_MODE', payload: mode });
+  }, [dispatch]);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExportMenu]);
+
+  // When selection rect is finalized, re-show the export menu
+  useEffect(() => {
+    if (state.toolMode === 'export-select' && state.exportSelection.rect && !state.exportSelection.start) {
+      setShowExportMenu(true);
+    }
+  }, [state.toolMode, state.exportSelection.rect, state.exportSelection.start]);
+
+  const getExportContext = useCallback(() => {
+    const stage = canvasRef?.current?.stage;
+    const floorImg = canvasRef?.current?.floorImage;
+    const name = activeFloorPlan?.name ?? 'Floor Plan';
+    return { stage, floorImg, name };
+  }, [canvasRef, activeFloorPlan]);
+
+  const getFullRegion = useCallback((_stage: Konva.Stage, floorImg: HTMLImageElement) => {
+    // Deselect furniture to hide transformer handles
+    dispatch({ type: 'SELECT_FURNITURE', payload: null });
+    // Use floor image bounds as the export region
+    return { x: 0, y: 0, width: floorImg.width, height: floorImg.height };
+  }, [dispatch]);
+
+  const handleExportPng = useCallback(() => {
+    const { stage, floorImg, name } = getExportContext();
+    if (!stage || !floorImg) return;
+    const region = getFullRegion(stage, floorImg);
+    // Allow re-render to hide transformer, then export
+    setTimeout(() => { exportAsPng(stage, region, name); setShowExportMenu(false); }, 50);
+  }, [getExportContext, getFullRegion]);
+
+  const handleExportPdf = useCallback(() => {
+    const { stage, floorImg, name } = getExportContext();
+    if (!stage || !floorImg) return;
+    const region = getFullRegion(stage, floorImg);
+    setTimeout(() => { exportAsPdf(stage, region, name); setShowExportMenu(false); }, 50);
+  }, [getExportContext, getFullRegion]);
+
+  const handleSelectRegion = useCallback(() => {
+    dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
+    dispatch({ type: 'SET_TOOL_MODE', payload: 'export-select' });
+    setShowExportMenu(false);
+  }, [dispatch]);
+
+  const handleSelectionExportPng = useCallback(() => {
+    const { stage, name } = getExportContext();
+    const rect = state.exportSelection.rect;
+    if (!stage || !rect) return;
+    // Clear selection overlay + deselect furniture before capture
+    dispatch({ type: 'SELECT_FURNITURE', payload: null });
+    dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
+    setTimeout(() => {
+      exportAsPng(stage, rect, name);
+      setShowExportMenu(false);
+    }, 50);
+  }, [getExportContext, state.exportSelection.rect, dispatch]);
+
+  const handleSelectionExportPdf = useCallback(() => {
+    const { stage, name } = getExportContext();
+    const rect = state.exportSelection.rect;
+    if (!stage || !rect) return;
+    // Clear selection overlay + deselect furniture before capture
+    dispatch({ type: 'SELECT_FURNITURE', payload: null });
+    dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
+    setTimeout(() => {
+      exportAsPdf(stage, rect, name);
+      setShowExportMenu(false);
+    }, 50);
+  }, [getExportContext, state.exportSelection.rect, dispatch]);
+
+  const handleCancelSelection = useCallback(() => {
+    dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
+    setShowExportMenu(false);
   }, [dispatch]);
 
   const handleShare = useCallback(async () => {
@@ -118,10 +209,53 @@ export function Toolbar({ projectId }: { projectId?: string | null }) {
             <span className="tool-label">{shareStatus ?? 'Share'}</span>
           </button>
         )}
-        <button className="tool-btn" onClick={exportLayout} title="Export Layout">
-          <span className="tool-icon">💾</span>
-          <span className="tool-label">Export</span>
-        </button>
+        <div className="export-menu-container" ref={exportMenuRef}>
+          <button
+            className={`tool-btn ${showExportMenu ? 'active' : ''}`}
+            onClick={() => setShowExportMenu(!showExportMenu)}
+            title="Export"
+          >
+            <span className="tool-icon">💾</span>
+            <span className="tool-label">Export</span>
+          </button>
+          {showExportMenu && (
+            <div className="export-dropdown">
+              {hasSelection ? (
+                <>
+                  <div className="export-dropdown-header">Export Selection</div>
+                  <button className="export-dropdown-item" onClick={handleSelectionExportPng}>
+                    📷 Export as PNG
+                  </button>
+                  <button className="export-dropdown-item" onClick={handleSelectionExportPdf}>
+                    📄 Export as PDF
+                  </button>
+                  <div className="export-dropdown-divider" />
+                  <button className="export-dropdown-item" onClick={handleCancelSelection}>
+                    ✕ Cancel selection
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="export-dropdown-header">Export Image</div>
+                  <button className="export-dropdown-item" onClick={handleExportPng} disabled={!activeFloorPlan}>
+                    📷 Current plan as PNG
+                  </button>
+                  <button className="export-dropdown-item" onClick={handleExportPdf} disabled={!activeFloorPlan}>
+                    📄 Current plan as PDF
+                  </button>
+                  <button className="export-dropdown-item" onClick={handleSelectRegion} disabled={!activeFloorPlan}>
+                    ✂️ Select region…
+                  </button>
+                  <div className="export-dropdown-divider" />
+                  <div className="export-dropdown-header">Export Data</div>
+                  <button className="export-dropdown-item" onClick={() => { exportLayout(); setShowExportMenu(false); }}>
+                    💾 Export as JSON
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
         <label className="tool-btn" title="Import Layout">
           <span className="tool-icon">📂</span>
           <span className="tool-label">Import</span>
