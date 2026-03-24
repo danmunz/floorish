@@ -10,9 +10,10 @@ import {
   dbFurnitureToApp,
   type Project,
 } from '../lib/api';
-import { getFloorPlanImageUrl } from '../lib/storage';
+import { getFloorPlanImageUrl, uploadFloorPlanImage } from '../lib/storage';
 import { useAppState } from '../hooks/useAppState';
 import { usePersistence } from '../hooks/usePersistence';
+import sampleFloorPlanUrl from '../assets/sample_floorplan.png';
 
 interface ProjectPickerProps {
   onProjectLoaded: (projectId: string) => void;
@@ -42,6 +43,29 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
   useEffect(() => {
     if (user) loadProjects();
   }, [user, loadProjects]);
+
+  const handleLoadSample = () => {
+    const id = crypto.randomUUID();
+    dispatch({
+      type: 'ADD_FLOOR_PLAN',
+      payload: {
+        id,
+        name: 'Sample Floor Plan',
+        imageUrl: sampleFloorPlanUrl,
+        pixelsPerFoot: null,
+        calibrationPoints: null,
+        calibrationDistanceFt: null,
+      },
+    });
+    // Upload the bundled asset to Supabase Storage for persistence
+    if (user) {
+      fetch(sampleFloorPlanUrl)
+        .then(r => r.blob())
+        .then(blob => uploadFloorPlanImage(new File([blob], 'sample_floorplan.png', { type: 'image/png' }), user.id))
+        .then(path => dispatch({ type: 'UPDATE_FLOOR_PLAN', payload: { id, updates: { imagePath: path } } }))
+        .catch(err => console.error('Failed to upload sample image:', err));
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -135,7 +159,14 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
 
       {projects.length === 0 ? (
         <div className="project-picker-empty">
-          <p>Drop or browse floor plan images above to start a new project.</p>
+          <p>Drop or browse floor plan images above to start a new project,<br />or try our sample to explore the app.</p>
+          <button className="sample-card" onClick={handleLoadSample}>
+            <span className="sample-card-icon">🏠</span>
+            <span className="sample-card-text">
+              <strong>Try a sample floor plan</strong>
+              <small>Explore furniture placement and calibration</small>
+            </span>
+          </button>
         </div>
       ) : (
         <div className="project-list">
