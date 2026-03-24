@@ -13,6 +13,7 @@ import { UserMenu } from './components/UserMenu';
 import { SharedView } from './components/SharedView';
 import { useCloudPersistence } from './hooks/useCloudPersistence';
 import { uploadFloorPlanImage } from './lib/storage';
+import { createProject } from './lib/api';
 import './App.css';
 
 function AppInner() {
@@ -31,12 +32,25 @@ function AppInner() {
     }
   }, [user, isGuest, projectId]);
 
-  // When state is hydrated via import (LOAD_STATE), switch to canvas view
+  // When floor plans appear (via image drop/browse or import), auto-create a
+  // project for authenticated users and switch to canvas view.
   useEffect(() => {
-    if (showProjectPicker && state.floorPlans.length > 0) {
+    if (!showProjectPicker || state.floorPlans.length === 0) return;
+    if (user && !isGuest && !projectId) {
+      const name = state.floorPlans[0]?.name || 'Untitled Project';
+      createProject(user.id, name)
+        .then(project => {
+          setProjectId(project.id);
+          setShowProjectPicker(false);
+        })
+        .catch(err => {
+          console.error('Auto-create project failed:', err);
+          setShowProjectPicker(false);
+        });
+    } else {
       setShowProjectPicker(false);
     }
-  }, [state.floorPlans.length, showProjectPicker]);
+  }, [state.floorPlans.length, showProjectPicker, user, isGuest, projectId]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
