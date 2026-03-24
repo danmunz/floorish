@@ -75,7 +75,15 @@ function AppInner() {
     <div className="app" onDrop={handleDrop} onDragOver={e => e.preventDefault()}>
       <header className="app-header">
         <div className="app-logo">
-          <span className="logo-icon">⌂</span>
+          <svg className="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 4L4 20h6v20h28V20h6L24 4z" fill="#264653" stroke="#264653" strokeWidth="2" strokeLinejoin="round"/>
+            <line x1="10" y1="28" x2="38" y2="28" stroke="#FAFAFA" strokeWidth="1" opacity="0.3"/>
+            <line x1="10" y1="34" x2="38" y2="34" stroke="#FAFAFA" strokeWidth="1" opacity="0.3"/>
+            <line x1="18" y1="20" x2="18" y2="40" stroke="#FAFAFA" strokeWidth="1" opacity="0.3"/>
+            <line x1="30" y1="20" x2="30" y2="40" stroke="#FAFAFA" strokeWidth="1" opacity="0.3"/>
+            <path d="M24 14c3 2 5 6 4 10-2-1-5-3-6-6 1 3 1 6-1 9-2-3-3-7-1-10-3 2-6 2-8 0 3-1 6-1 9 0-2-2-3-5-1-8 2 2 4 4 4 5z" fill="#7A8B52" opacity="0.9"/>
+            <circle cx="24" cy="16" r="2.5" fill="#E9C46A"/>
+          </svg>
           <span className="logo-text">Floorish</span>
         </div>
         <FloorPlanLoader />

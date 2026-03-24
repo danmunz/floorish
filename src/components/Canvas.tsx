@@ -287,9 +287,9 @@ export function Canvas() {
     <div ref={containerRef} className="canvas-container" style={{ cursor: cursorStyle }}>
       {!activeFloorPlan && (
         <div className="canvas-empty">
-          <div className="canvas-empty-icon">📐</div>
-          <div className="canvas-empty-title">No Floor Plan Loaded</div>
-          <div className="canvas-empty-sub">Upload a floor plan image to get started</div>
+          <div className="canvas-empty-icon">🏡</div>
+          <div className="canvas-empty-title">Welcome home.</div>
+          <div className="canvas-empty-sub">Drop a floor plan image to start planning your space</div>
         </div>
       )}
       <Stage
