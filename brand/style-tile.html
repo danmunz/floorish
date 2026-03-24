@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floorish Style Tile - The Olive Branch</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-bg-base: #FAFAFA;
+      --color-text-main: #264653;
+      --color-primary: #E9C46A;
+      --color-accent-olive: #7A8B52;
+      --font-family-heading: 'Lora', serif;
+      --font-family-body: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background-color: #EFEBE4; /* Presentation background */
+      margin: 0;
+      padding: 60px 20px;
+      font-family: var(--font-family-body);
+      display: flex;
+      justify-content: center;
+      color: var(--color-text-main);
+    }
+
+    .style-tile {
+      width: 100%;
+      max-width: 900px;
+      padding: 50px;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      background-color: var(--color-bg-base);
+      border-radius: 16px;
+      box-shadow: 0 12px 24px rgba(38, 70, 83, 0.08);
+    }
+
+    .section-title {
+      font-family: var(--font-family-heading);
+      grid-column: 1 / -1;
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .description {
+      grid-column: 1 / -1;
+      margin-top: 0;
+      opacity: 0.8;
+      font-size: 1.2rem;
+      max-width: 650px;
+      line-height: 1.6;
+    }
+
+    /* Swatches */
+    .palette {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .swatch-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .swatch {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+    }
+
+    .swatch-label {
+      font-size: 0.85rem;
+      text-align: center;
+      font-weight: 700;
+      opacity: 0.8;
+    }
+
+    /* Typography Section */
+    .typography {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .type-sample h1 {
+      font-family: var(--font-family-heading);
+      margin: 0;
+      font-size: 2.8rem;
+      line-height: 1.2;
+    }
+
+    .type-sample p {
+      margin: 5px 0 0 0;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    /* UI Elements */
+    .ui-elements {
+      grid-column: 1 / -1;
+      padding-top: 30px;
+      border-top: 1px solid rgba(38, 70, 83, 0.1);
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: var(--color-text-main);
+      border: none;
+      padding: 14px 32px;
+      border-radius: 50px;
+      font-family: var(--font-family-body);
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(233, 196, 106, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(233, 196, 106, 0.5);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--color-text-main);
+      border: 2px solid rgba(38, 70, 83, 0.2);
+      padding: 12px 32px;
+      border-radius: 50px;
+      font-family: var(--font-family-body);
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--color-text-main);
+    }
+
+    .ui-card {
+      background: white;
+      padding: 16px 28px;
+      border-radius: 12px;
+      border-left: 4px solid var(--color-accent-olive);
+      box-shadow: 0 4px 12px rgba(38, 70, 83, 0.06);
+      font-family: var(--font-family-body);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.05rem;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="style-tile">
+    <h1 class="section-title">The Olive Branch</h1>
+    <p class="description">A true midcentury nod. The earthy olive green pairs perfectly with the mustard yellow, feeling both retro and sophisticated, creating a welcoming space to start planning.</p>
+    
+    <div class="palette">
+      <div class="swatch-container">
+        <div class="swatch" style="background-color: var(--color-bg-base); border: 1px solid #eaeaea;"></div>
+        <span class="swatch-label">Plaster<br>#FAFAFA</span>
+      </div>
+      <div class="swatch-container">
+        <div class="swatch" style="background-color: var(--color-primary);"></div>
+        <span class="swatch-label">Mustard<br>#E9C46A</span>
+      </div>
+      <div class="swatch-container">
+        <div class="swatch" style="background-color: var(--color-text-main);"></div>
+        <span class="swatch-label">Forest<br>#264653</span>
+      </div>
+      <div class="swatch-container">
+        <div class="swatch" style="background-color: var(--color-accent-olive);"></div>
+        <span class="swatch-label">Olive<br>#7A8B52</span>
+      </div>
+    </div>
+
+    <div class="typography">
+      <div class="type-sample">
+        <h1>Welcome home.</h1>
+        <p><strong>Lora</strong> (Headings & Display)</p>
+      </div>
+      <div class="type-sample">
+        <h1 style="font-family: var(--font-family-body);">Upload floor plan</h1>
+        <p><strong>DM Sans</strong> (UI & Body Copy)</p>
+      </div>
+    </div>
+
+    <div class="ui-elements">
+      <button class="btn-primary">Browse Catalog</button>
+      <button class="btn-secondary">Draw Polygon</button>
+      <div class="ui-card">🌿 Snap to grid enabled</div>
+    </div>
+  </div>
+
+</body>
+</html>

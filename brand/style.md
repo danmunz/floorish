@@ -1,6 +1,47 @@
 # Floorish Styleguide: The Olive Branch
 
-**Theme Concept:** A true midcentury nod. The earthy olive green pairs perfectly with the mustard yellow, feeling both retro and sophisticated, creating a welcoming space to start planning.
+## Brand Overview
+
+### **The Vibe & Concept: "Midcentury Transitional Meets 'Welcome Home'"**
+
+Floorish takes the traditionally sterile, overwhelming task of arranging furniture to scale and turns it into a joyful, nesting experience. It beautifully balances the precise, technical nature of scale calibration and measurement tools with the cozy, emotional anticipation of making a space your own. It feels like a sunny Sunday morning spent daydreaming over a cup of coffee.
+
+### **The Brand Voice: The Knowledgeable Neighbor**
+
+The voice is empathetic, warm, and highly encouraging. Floorish speaks to the user like a friendly neighbor who came over to help you unpack—and just happens to be brilliant at spatial reasoning. The tone strips away technical intimidation; while the app runs complex tools like OCR auto-detection and grid snapping under the hood, the voice focuses entirely on the excitement of finding the perfect layout.
+
+### **The Color Palette: "The Olive Branch"**
+
+A grounded, earthy, and sophisticated palette that provides high contrast without the harshness of pure black and white.
+
+*   **Plaster (#FAFAFA):** A fresh, warm white that provides a clean, inviting background for importing floor plan images.
+    
+*   **Forest (#264653):** A deep, grounding green-blue that gives text and structural borders a strong, architectural weight.
+    
+*   **Mustard (#E9C46A):** A sunny, energetic accent used to draw the eye to primary calls to action and active tools.
+    
+*   **Olive (#7A8B52):** A true midcentury green used for secondary UI accents, snapping highlights, and success states.
+
+### **The Typography: Editorial Precision**
+
+*   **Headings (Lora):** An elegant, welcoming serif that feels like flipping through a high-end lifestyle or interior design magazine.
+    
+*   **UI & Body (DM Sans):** A friendly, geometric sans-serif that ensures absolute clarity and legibility for the app's menus, catalogs, and technical data.
+
+### **The Visual Identity**
+
+The UI leans into soft, tactile shapes, utilizing pill-style buttons and gently rounded cards that float above the canvas.
+
+## Brand Voice Examples
+
+### Welcome Copy
+This copy is designed to sit right near the top of your landing page, perhaps just below the main "Upload Floor Plan" button. It immediately establishes the "knowledgeable neighbor" voice, acknowledging the stress of moving while pivoting straight to the joy of nesting.
+
+>Welcome home.
+>
+>Moving into a new space—or reimagining your current one—should be exciting, not exhausting. Floorish is your personal studio for turning empty floor plans into perfectly planned sanctuaries. We handle the heavy lifting behind the scenes, ensuring your furniture catalog and custom shapes are perfectly scaled to real-world dimensions. You get to focus on the fun part: finding exactly where the sofa belongs.
+>
+>Pour a cup of coffee, drop in your floor plan, and let's bring your vision to life.
 
 ## 🎨 Color Palette
 
