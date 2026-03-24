@@ -11,39 +11,80 @@
 
   <style>
     :root {
-      --color-bg-base: #FAFAFA;
-      --color-text-main: #264653;
-      --color-primary: #E9C46A;
-      --color-accent-olive: #7A8B52;
-      --font-family-heading: 'Lora', serif;
-      --font-family-body: 'DM Sans', sans-serif;
+      /* Brand colors */
+      --plaster: #FAFAFA;
+      --mustard: #E9C46A;
+      --forest: #264653;
+      --olive: #7A8B52;
+
+      /* Derived surfaces */
+      --bg: #F5F2ED;
+      --bg-raised: #FFFFFF;
+      --bg-surface: #FAFAFA;
+      --bg-hover: #F0ECE6;
+      --border: rgba(38, 70, 83, 0.1);
+      --border-strong: rgba(38, 70, 83, 0.2);
+
+      /* Semantic */
+      --accent-hover: #d4af5a;
+      --danger: #C1534F;
+      --warning: #D4943A;
+
+      /* Shadows */
+      --shadow-soft: 0 1px 2px rgba(38, 70, 83, 0.04), 0 4px 12px rgba(38, 70, 83, 0.06);
+      --shadow-btn: 0 2px 4px rgba(233, 196, 106, 0.3), 0 4px 12px rgba(233, 196, 106, 0.2);
+      --shadow-btn-hover: 0 4px 8px rgba(233, 196, 106, 0.35), 0 8px 24px rgba(233, 196, 106, 0.25);
+      --shadow-elevated: 0 4px 12px rgba(38, 70, 83, 0.05), 0 16px 40px rgba(38, 70, 83, 0.1);
+      --shadow-dramatic: 0 8px 24px rgba(38, 70, 83, 0.08), 0 32px 64px rgba(38, 70, 83, 0.12);
+
+      /* Timing */
+      --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+      /* Fonts */
+      --font-heading: 'Lora', Georgia, serif;
+      --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     body {
-      background-color: #EFEBE4; /* Presentation background */
+      background-color: var(--bg);
       margin: 0;
       padding: 60px 20px;
-      font-family: var(--font-family-body);
+      font-family: var(--font-body);
       display: flex;
       justify-content: center;
-      color: var(--color-text-main);
+      color: var(--forest);
     }
 
     .style-tile {
       width: 100%;
-      max-width: 900px;
+      max-width: 960px;
       padding: 50px;
       box-sizing: border-box;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 40px;
-      background-color: var(--color-bg-base);
+      background-color: var(--bg-raised);
       border-radius: 16px;
-      box-shadow: 0 12px 24px rgba(38, 70, 83, 0.08);
+      box-shadow: var(--shadow-dramatic);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Header accent line — matches app header */
+    .style-tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--olive) 0%, var(--mustard) 50%, var(--olive) 100%);
+      opacity: 0.85;
     }
 
     .section-title {
-      font-family: var(--font-family-heading);
+      font-family: var(--font-heading);
       grid-column: 1 / -1;
       margin-top: 0;
       margin-bottom: 10px;
@@ -53,13 +94,48 @@
     .description {
       grid-column: 1 / -1;
       margin-top: 0;
-      opacity: 0.8;
-      font-size: 1.2rem;
-      max-width: 650px;
+      color: rgba(38, 70, 83, 0.7);
+      font-size: 1.1rem;
+      max-width: 680px;
       line-height: 1.6;
     }
 
-    /* Swatches */
+    /* Section labels */
+    .section-label {
+      grid-column: 1 / -1;
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--forest);
+      padding-bottom: 6px;
+      margin-bottom: -20px;
+      position: relative;
+    }
+
+    .section-label::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 24px;
+      height: 2px;
+      border-radius: 1px;
+    }
+
+    .section-label.mustard-accent::after { background: var(--mustard); }
+    .section-label.olive-accent::after { background: var(--olive); }
+
+    /* Divider */
+    .divider {
+      grid-column: 1 / -1;
+      height: 1px;
+      background: var(--border);
+      margin: 0;
+    }
+
+    /* ── Swatches ── */
     .palette {
       display: flex;
       gap: 20px;
@@ -69,24 +145,59 @@
     .swatch-container {
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 10px;
     }
 
     .swatch {
-      width: 90px;
-      height: 90px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.25s var(--ease-out-quart), box-shadow 0.25s var(--ease-out-quart);
+    }
+
+    .swatch:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-elevated);
     }
 
     .swatch-label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       text-align: center;
       font-weight: 700;
-      opacity: 0.8;
+      color: rgba(38, 70, 83, 0.7);
+      line-height: 1.4;
     }
 
-    /* Typography Section */
+    /* ── Derived Surfaces ── */
+    .surfaces {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .surface-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: 1px solid var(--border-strong);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgba(38, 70, 83, 0.7);
+    }
+
+    .surface-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+      flex-shrink: 0;
+    }
+
+    /* ── Typography ── */
     .typography {
       display: flex;
       flex-direction: column;
@@ -94,77 +205,255 @@
     }
 
     .type-sample h1 {
-      font-family: var(--font-family-heading);
+      font-family: var(--font-heading);
       margin: 0;
-      font-size: 2.8rem;
+      font-size: 2.6rem;
       line-height: 1.2;
+      color: var(--forest);
     }
 
     .type-sample p {
       margin: 5px 0 0 0;
-      font-size: 1rem;
+      font-size: 0.9rem;
       line-height: 1.5;
+      color: rgba(38, 70, 83, 0.45);
     }
 
-    /* UI Elements */
+    /* ── UI Elements ── */
     .ui-elements {
       grid-column: 1 / -1;
-      padding-top: 30px;
-      border-top: 1px solid rgba(38, 70, 83, 0.1);
       display: flex;
-      gap: 20px;
+      gap: 16px;
       align-items: center;
       flex-wrap: wrap;
     }
 
     .btn-primary {
-      background-color: var(--color-primary);
-      color: var(--color-text-main);
-      border: none;
-      padding: 14px 32px;
+      background-color: var(--mustard);
+      color: var(--forest);
+      border: 1.5px solid var(--mustard);
+      padding: 10px 28px;
       border-radius: 50px;
-      font-family: var(--font-family-body);
+      font-family: var(--font-body);
       font-weight: 700;
-      font-size: 1.05rem;
+      font-size: 0.85rem;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(233, 196, 106, 0.4);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--shadow-btn);
+      transition: all 0.25s var(--ease-out-quart);
     }
 
     .btn-primary:hover {
+      background: var(--accent-hover);
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(233, 196, 106, 0.5);
+      box-shadow: var(--shadow-btn-hover);
     }
 
-    .btn-secondary {
+    .btn-ghost {
       background-color: transparent;
-      color: var(--color-text-main);
-      border: 2px solid rgba(38, 70, 83, 0.2);
-      padding: 12px 32px;
+      color: rgba(38, 70, 83, 0.7);
+      border: 1.5px solid var(--border-strong);
+      padding: 10px 28px;
       border-radius: 50px;
-      font-family: var(--font-family-body);
+      font-family: var(--font-body);
       font-weight: 700;
-      font-size: 1.05rem;
+      font-size: 0.85rem;
       cursor: pointer;
-      transition: border-color 0.2s ease;
+      transition: all 0.15s var(--ease-out-quart);
     }
 
-    .btn-secondary:hover {
-      border-color: var(--color-text-main);
+    .btn-ghost:hover {
+      background: rgba(38, 70, 83, 0.05);
+      color: var(--forest);
+      border-color: var(--forest);
+    }
+
+    .btn-danger {
+      background-color: transparent;
+      color: var(--danger);
+      border: 1.5px solid rgba(193, 83, 79, 0.3);
+      padding: 10px 28px;
+      border-radius: 50px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s var(--ease-out-quart);
+    }
+
+    .btn-danger:hover {
+      background: rgba(193, 83, 79, 0.08);
+      border-color: var(--danger);
     }
 
     .ui-card {
-      background: white;
-      padding: 16px 28px;
+      background: var(--bg-raised);
+      padding: 14px 24px;
       border-radius: 12px;
-      border-left: 4px solid var(--color-accent-olive);
-      box-shadow: 0 4px 12px rgba(38, 70, 83, 0.06);
-      font-family: var(--font-family-body);
+      border-left: 4px solid var(--olive);
+      background: rgba(122, 139, 82, 0.04);
+      border: 1px solid rgba(122, 139, 82, 0.15);
+      border-left: 4px solid var(--olive);
+      box-shadow: var(--shadow-soft);
+      font-family: var(--font-body);
       font-weight: 600;
       display: flex;
       align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: var(--forest);
+    }
+
+    /* ── Active States ── */
+    .active-states {
+      grid-column: 1 / -1;
+      display: flex;
       gap: 12px;
-      font-size: 1.05rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .active-tool {
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      cursor: default;
+    }
+
+    .active-tool.mustard {
+      background: var(--mustard);
+      color: var(--forest);
+      border-color: var(--mustard);
+      box-shadow: var(--shadow-btn), 0 0 0 3px rgba(233, 196, 106, 0.15);
+    }
+
+    .active-tool.forest {
+      background: var(--forest);
+      color: var(--plaster);
+      border-color: var(--forest);
+      box-shadow: 0 2px 8px rgba(38, 70, 83, 0.25), 0 0 0 3px rgba(38, 70, 83, 0.08);
+    }
+
+    .active-tool.inactive {
+      background: transparent;
+      color: rgba(38, 70, 83, 0.7);
+      border-color: var(--border-strong);
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 50px;
+    }
+
+    .badge.olive {
+      color: var(--olive);
+      background: rgba(122, 139, 82, 0.15);
+      border: 1px solid rgba(122, 139, 82, 0.25);
+    }
+
+    .badge.mustard {
+      color: #8B7230;
+      background: rgba(233, 196, 106, 0.15);
+      border: 1px solid rgba(233, 196, 106, 0.35);
+    }
+
+    .badge.danger {
+      color: var(--danger);
+      background: rgba(193, 83, 79, 0.08);
+      border: 1px solid rgba(193, 83, 79, 0.2);
+    }
+
+    /* ── Focus Ring Demo ── */
+    .focus-input {
+      padding: 8px 16px;
+      border: 1.5px solid var(--mustard);
+      border-radius: 4px;
+      box-shadow: 0 0 0 3px rgba(233, 196, 106, 0.2);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--forest);
+      outline: none;
+      width: 140px;
+    }
+
+    .focus-input::placeholder {
+      color: rgba(38, 70, 83, 0.45);
+    }
+
+    /* ── Progress ── */
+    .progress-bar {
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+      width: 180px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 65%;
+      background: linear-gradient(90deg, var(--olive), var(--mustard));
+      border-radius: 3px;
+    }
+
+    .progress-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: rgba(38, 70, 83, 0.45);
+      margin-top: 4px;
+    }
+
+    /* ── Shadows Demo ── */
+    .shadows-row {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .shadow-demo {
+      width: 100px;
+      height: 60px;
+      border-radius: 12px;
+      background: var(--bg-raised);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: rgba(38, 70, 83, 0.45);
+    }
+
+    /* ── Scrollbar demo ── */
+    .scrollbar-demo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: rgba(38, 70, 83, 0.45);
+      font-weight: 600;
+    }
+
+    .scrollbar-track {
+      width: 5px;
+      height: 40px;
+      background: var(--bg);
+      border-radius: 3px;
+      position: relative;
+    }
+
+    .scrollbar-thumb {
+      width: 5px;
+      height: 18px;
+      background: rgba(122, 139, 82, 0.25);
+      border-radius: 3px;
+      position: absolute;
+      top: 6px;
     }
 
   </style>
@@ -173,42 +462,114 @@
 
   <div class="style-tile">
     <h1 class="section-title">The Olive Branch</h1>
-    <p class="description">A true midcentury nod. The earthy olive green pairs perfectly with the mustard yellow, feeling both retro and sophisticated, creating a welcoming space to start planning.</p>
-    
+    <p class="description">A grounded, earthy, and sophisticated palette with strategic color pops that prevent the warm neutrals from looking washed out. Midcentury olive and sunny mustard provide energy, while layered shadows and micro-interactions give the interface physical presence.</p>
+
+    <!-- ── Brand Colors ── -->
+    <h2 class="section-label mustard-accent">Brand Colors</h2>
     <div class="palette">
       <div class="swatch-container">
-        <div class="swatch" style="background-color: var(--color-bg-base); border: 1px solid #eaeaea;"></div>
+        <div class="swatch" style="background-color: var(--plaster); border: 1px solid #eaeaea;"></div>
         <span class="swatch-label">Plaster<br>#FAFAFA</span>
       </div>
       <div class="swatch-container">
-        <div class="swatch" style="background-color: var(--color-primary);"></div>
+        <div class="swatch" style="background-color: var(--mustard);"></div>
         <span class="swatch-label">Mustard<br>#E9C46A</span>
       </div>
       <div class="swatch-container">
-        <div class="swatch" style="background-color: var(--color-text-main);"></div>
+        <div class="swatch" style="background-color: var(--forest);"></div>
         <span class="swatch-label">Forest<br>#264653</span>
       </div>
       <div class="swatch-container">
-        <div class="swatch" style="background-color: var(--color-accent-olive);"></div>
+        <div class="swatch" style="background-color: var(--olive);"></div>
         <span class="swatch-label">Olive<br>#7A8B52</span>
       </div>
     </div>
 
-    <div class="typography">
-      <div class="type-sample">
-        <h1>Welcome home.</h1>
-        <p><strong>Lora</strong> (Headings & Display)</p>
+    <!-- ── Derived Surfaces ── -->
+    <div class="surfaces">
+      <div class="surface-chip">
+        <div class="surface-dot" style="background: #F5F2ED;"></div>
+        --bg
       </div>
-      <div class="type-sample">
-        <h1 style="font-family: var(--font-family-body);">Upload floor plan</h1>
-        <p><strong>DM Sans</strong> (UI & Body Copy)</p>
+      <div class="surface-chip">
+        <div class="surface-dot" style="background: #FFFFFF;"></div>
+        --bg-raised
+      </div>
+      <div class="surface-chip">
+        <div class="surface-dot" style="background: #FAFAFA;"></div>
+        --bg-surface
+      </div>
+      <div class="surface-chip">
+        <div class="surface-dot" style="background: #F0ECE6;"></div>
+        --bg-hover
       </div>
     </div>
 
+    <div class="divider"></div>
+
+    <!-- ── Typography ── -->
+    <h2 class="section-label olive-accent">Typography</h2>
+    <div class="typography">
+      <div class="type-sample">
+        <h1>Welcome home.</h1>
+        <p><strong>Lora</strong> — Headings & Display</p>
+      </div>
+      <div class="type-sample">
+        <h1 style="font-family: var(--font-body); font-size: 2rem;">Upload floor plan</h1>
+        <p><strong>DM Sans</strong> — UI & Body Copy</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Buttons ── -->
+    <h2 class="section-label mustard-accent">Buttons</h2>
     <div class="ui-elements">
       <button class="btn-primary">Browse Catalog</button>
-      <button class="btn-secondary">Draw Polygon</button>
-      <div class="ui-card">🌿 Snap to grid enabled</div>
+      <button class="btn-ghost">Draw Polygon</button>
+      <button class="btn-danger">Delete Floor</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Active States & Badges ── -->
+    <h2 class="section-label olive-accent">Active States & Badges</h2>
+    <div class="active-states">
+      <div class="active-tool mustard">📐 Measure</div>
+      <div class="active-tool forest">Floor 1</div>
+      <div class="active-tool inactive">🔲 Snap</div>
+      <span class="badge olive">Calibrated ✓</span>
+      <span class="badge mustard">Placing</span>
+      <span class="badge danger">Unsaved</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Cards, Focus, Progress ── -->
+    <h2 class="section-label mustard-accent">Panels & Controls</h2>
+    <div class="ui-elements">
+      <div class="ui-card">🌿 Selected: Sofa — 84″ × 36″</div>
+      <input class="focus-input" placeholder="Width (ft)" value="12" />
+      <div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="progress-label">OCR Detecting…</div>
+      </div>
+      <div class="scrollbar-demo">
+        <div class="scrollbar-track"><div class="scrollbar-thumb"></div></div>
+        Olive-tinted scrollbar
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Shadows ── -->
+    <h2 class="section-label olive-accent">Shadow System</h2>
+    <div class="shadows-row">
+      <div class="shadow-demo" style="box-shadow: var(--shadow-soft);">Soft</div>
+      <div class="shadow-demo" style="box-shadow: var(--shadow-btn);">Button</div>
+      <div class="shadow-demo" style="box-shadow: var(--shadow-elevated);">Elevated</div>
+      <div class="shadow-demo" style="box-shadow: var(--shadow-dramatic);">Dramatic</div>
+      <div class="shadow-demo" style="box-shadow: var(--shadow-btn), 0 0 0 3px rgba(233, 196, 106, 0.15);">+ Glow</div>
     </div>
   </div>
 
