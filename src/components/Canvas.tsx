@@ -296,7 +296,7 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
 
   // Export selection rect drawing
   const handleMouseDown = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
+    (_e: Konva.KonvaEventObject<MouseEvent>) => {
       if (state.toolMode !== 'export-select') return;
       const pos = pointerToImageCoords();
       if (!pos) return;
@@ -306,7 +306,7 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
   );
 
   const handleMouseMove = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
+    (_e: Konva.KonvaEventObject<MouseEvent>) => {
       if (state.toolMode !== 'export-select' || !state.exportSelection.start) return;
       const pos = pointerToImageCoords();
       if (!pos) return;

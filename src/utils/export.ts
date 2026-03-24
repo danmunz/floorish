@@ -28,21 +28,23 @@ function captureRegion(
   stage.scale({ x: 1, y: 1 });
   stage.batchDraw();
 
-  const dataUrl = stage.toDataURL({
-    x: region.x,
-    y: region.y,
-    width: region.width,
-    height: region.height,
-    pixelRatio,
-    mimeType: 'image/png',
-  });
+  try {
+    const dataUrl = stage.toDataURL({
+      x: region.x,
+      y: region.y,
+      width: region.width,
+      height: region.height,
+      pixelRatio,
+      mimeType: 'image/png',
+    });
 
-  // Restore viewport
-  stage.position({ x: prevX, y: prevY });
-  stage.scale({ x: prevScaleX, y: prevScaleY });
-  stage.batchDraw();
-
-  return dataUrl;
+    return dataUrl;
+  } finally {
+    // Restore viewport even if toDataURL throws (e.g. tainted canvas)
+    stage.position({ x: prevX, y: prevY });
+    stage.scale({ x: prevScaleX, y: prevScaleY });
+    stage.batchDraw();
+  }
 }
 
 function triggerDownload(dataUrl: string, filename: string) {

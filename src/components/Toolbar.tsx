@@ -49,7 +49,7 @@ export function Toolbar({ projectId, canvasRef }: { projectId?: string | null; c
     return { stage, floorImg, name };
   }, [canvasRef, activeFloorPlan]);
 
-  const getFullRegion = useCallback((stage: Konva.Stage, floorImg: HTMLImageElement) => {
+  const getFullRegion = useCallback((_stage: Konva.Stage, floorImg: HTMLImageElement) => {
     // Deselect furniture to hide transformer handles
     dispatch({ type: 'SELECT_FURNITURE', payload: null });
     // Use floor image bounds as the export region
@@ -81,10 +81,11 @@ export function Toolbar({ projectId, canvasRef }: { projectId?: string | null; c
     const { stage, name } = getExportContext();
     const rect = state.exportSelection.rect;
     if (!stage || !rect) return;
+    // Clear selection overlay + deselect furniture before capture
     dispatch({ type: 'SELECT_FURNITURE', payload: null });
+    dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
     setTimeout(() => {
       exportAsPng(stage, rect, name);
-      dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
       setShowExportMenu(false);
     }, 50);
   }, [getExportContext, state.exportSelection.rect, dispatch]);
@@ -93,10 +94,11 @@ export function Toolbar({ projectId, canvasRef }: { projectId?: string | null; c
     const { stage, name } = getExportContext();
     const rect = state.exportSelection.rect;
     if (!stage || !rect) return;
+    // Clear selection overlay + deselect furniture before capture
     dispatch({ type: 'SELECT_FURNITURE', payload: null });
+    dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
     setTimeout(() => {
       exportAsPdf(stage, rect, name);
-      dispatch({ type: 'CLEAR_EXPORT_SELECTION' });
       setShowExportMenu(false);
     }, 50);
   }, [getExportContext, state.exportSelection.rect, dispatch]);
