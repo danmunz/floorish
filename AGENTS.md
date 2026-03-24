@@ -4,7 +4,7 @@
 
 - **Atomic commits**: Each commit should represent a single, self-contained change. Do not combine unrelated changes in one commit.
 - **Descriptive messages**: Use clear, imperative commit messages (e.g., "Add grid snapping to furniture placement", not "updates" or "fix stuff").
-- **New branches for significant changes**: Create a feature or fix branch for any non-trivial work. Branch names should be descriptive (e.g., `feat/export-pdf`, `fix/calibration-rounding`).
+- **New branches for significant changes**: Create a feature or fix branch for any non-trivial work. Branch names should be descriptive (e.g., `feat/export-pdf`, `fix/calibration-rounding`). Push the branch and open a pull request — do not merge into `main` automatically. The PR should be left open for review.
 - **No commits to main without test coverage**: Every commit merged to `main` must include passing tests that cover the changed functionality. Run `npm test` before pushing. If adding new logic, add corresponding tests in the relevant `*.test.ts` / `*.test.tsx` file.
 
 ## README Maintenance
