@@ -1,14 +1,32 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { AppProvider, useAppState } from './hooks/useAppState';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Canvas } from './components/Canvas';
 import { FurniturePalette } from './components/FurniturePalette';
 import { CalibrationPanel } from './components/CalibrationPanel';
 import { FloorPlanLoader } from './components/FloorPlanLoader';
 import { Toolbar } from './components/Toolbar';
+import { AuthGate } from './components/AuthGate';
+import { ProjectPicker } from './components/ProjectPicker';
+import { UserMenu } from './components/UserMenu';
+import { useCloudPersistence } from './hooks/useCloudPersistence';
 import './App.css';
 
 function AppInner() {
   const { state, dispatch, undo, redo } = useAppState();
+  const { user, isGuest } = useAuth();
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
+
+  // Cloud autosave for authenticated users
+  useCloudPersistence(projectId);
+
+  // Show project picker for authenticated users who haven't selected a project
+  useEffect(() => {
+    if (user && !isGuest && !projectId) {
+      setShowProjectPicker(true);
+    }
+  }, [user, isGuest, projectId]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
@@ -87,27 +105,43 @@ function AppInner() {
           <span className="logo-text">Floorish</span>
         </div>
         <FloorPlanLoader />
+        <UserMenu />
       </header>
 
       <Toolbar />
 
-      <div className="app-body">
-        <aside className="sidebar">
-          <CalibrationPanel />
-          <FurniturePalette />
-        </aside>
-        <main className="main-canvas">
-          <Canvas />
-        </main>
-      </div>
+      {showProjectPicker && !isGuest ? (
+        <div className="app-body">
+          <ProjectPicker
+            onProjectLoaded={(id) => {
+              setProjectId(id);
+              setShowProjectPicker(false);
+            }}
+          />
+        </div>
+      ) : (
+        <div className="app-body">
+          <aside className="sidebar">
+            <CalibrationPanel />
+            <FurniturePalette />
+          </aside>
+          <main className="main-canvas">
+            <Canvas />
+          </main>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppInner />
-    </AppProvider>
+    <AuthProvider>
+      <AuthGate>
+        <AppProvider>
+          <AppInner />
+        </AppProvider>
+      </AuthGate>
+    </AuthProvider>
   );
 }
