@@ -42,14 +42,18 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
     if (user) loadProjects();
   }, [user, loadProjects]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleCreate = async () => {
     if (!user) return;
+    setError(null);
     try {
       const project = await createProject(user.id);
       setProjects((prev) => [project, ...prev]);
       onProjectLoaded(project.id);
     } catch (err) {
       console.error('Failed to create project:', err);
+      setError('Failed to create project. Please try again.');
     }
   };
 
@@ -132,10 +136,16 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
     <div className="project-picker">
       <div className="project-picker-header">
         <h2 className="project-picker-title">Your Projects</h2>
-        <button className="btn-primary" onClick={handleCreate}>
+        <button className="btn-sm btn-primary" onClick={handleCreate}>
           + New Project
         </button>
       </div>
+
+      {error && (
+        <div className="project-picker-error" style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: 12 }}>
+          {error}
+        </div>
+      )}
 
       {projects.length === 0 ? (
         <div className="project-picker-empty">

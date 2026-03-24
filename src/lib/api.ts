@@ -25,11 +25,25 @@ export async function fetchProjects(): Promise<Project[]> {
   return (data ?? []).map(rowToProject);
 }
 
+export async function ensureProfile(userId: string, meta?: Record<string, string>): Promise<void> {
+  if (!supabase) return;
+  const { data } = await supabase.from('profiles').select('id').eq('id', userId).single();
+  if (!data) {
+    await supabase.from('profiles').insert({
+      id: userId,
+      display_name: meta?.full_name ?? meta?.name ?? null,
+      avatar_url: meta?.avatar_url ?? null,
+    });
+  }
+}
+
 export async function createProject(
   userId: string,
   name = 'Untitled Project'
 ): Promise<Project> {
   if (!supabase) throw new Error('Supabase not configured');
+  // Ensure profile exists (trigger may not have fired for pre-migration users)
+  await ensureProfile(userId);
   const { data, error } = await supabase
     .from('projects')
     .insert({ user_id: userId, name })

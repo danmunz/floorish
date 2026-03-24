@@ -110,7 +110,7 @@ function AppInner() {
         <UserMenu />
       </header>
 
-      <Toolbar projectId={projectId} />
+      {!showProjectPicker && <Toolbar projectId={projectId} />}
 
       {showProjectPicker && !isGuest ? (
         <div className="app-body">
