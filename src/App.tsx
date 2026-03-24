@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useAppState } from './hooks/useAppState';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Canvas } from './components/Canvas';
@@ -9,6 +10,7 @@ import { Toolbar } from './components/Toolbar';
 import { AuthGate } from './components/AuthGate';
 import { ProjectPicker } from './components/ProjectPicker';
 import { UserMenu } from './components/UserMenu';
+import { SharedView } from './components/SharedView';
 import { useCloudPersistence } from './hooks/useCloudPersistence';
 import './App.css';
 
@@ -108,7 +110,7 @@ function AppInner() {
         <UserMenu />
       </header>
 
-      <Toolbar />
+      <Toolbar projectId={projectId} />
 
       {showProjectPicker && !isGuest ? (
         <div className="app-body">
@@ -136,12 +138,29 @@ function AppInner() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AuthGate>
-        <AppProvider>
-          <AppInner />
-        </AppProvider>
-      </AuthGate>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route
+            path="/share/:token"
+            element={
+              <AppProvider>
+                <SharedView />
+              </AppProvider>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <AuthGate>
+                <AppProvider>
+                  <AppInner />
+                </AppProvider>
+              </AuthGate>
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
