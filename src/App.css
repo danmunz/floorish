@@ -1105,6 +1105,52 @@ html, body, #root {
   text-align: center;
   margin-top: 48px;
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.sample-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 28px;
+  background: var(--bg-raised);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  font-family: var(--font-body);
+  color: var(--forest);
+}
+
+.sample-card:hover {
+  border-color: var(--olive);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-soft);
+}
+
+.sample-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.sample-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sample-card-text strong {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.sample-card-text small {
+  font-size: 0.82rem;
+  color: var(--text-muted);
 }
 
 .project-list {
