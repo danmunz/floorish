@@ -110,7 +110,16 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
     );
   }
 
-  const labelFontSize = Math.max(11, Math.min(14, item.widthPx * 0.12));
+  const labelFontSize = Math.max(10 / stageScale, Math.min(14, item.widthPx * 0.12));
+
+  // Clamp scale-compensated transformer values to prevent them from growing
+  // absurdly large at low zoom or vanishing at high zoom.
+  const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+  const trBorderWidth = clamp(1.5 / stageScale, 0.5, 4);
+  const trAnchorStroke = clamp(1.5 / stageScale, 0.5, 4);
+  const trAnchorSize = clamp(8 / stageScale, 4, 16);
+  const trAnchorRadius = clamp(2 / stageScale, 1, 4);
+  const trRotateOffset = clamp(20 / stageScale, 10, 40);
 
   return (
     <>
@@ -152,13 +161,13 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
             'middle-left', 'middle-right', 'top-center', 'bottom-center',
           ]}
           borderStroke="#264653"
-          borderStrokeWidth={1.5 / stageScale}
+          borderStrokeWidth={trBorderWidth}
           anchorFill="#E9C46A"
           anchorStroke="#264653"
-          anchorStrokeWidth={1.5 / stageScale}
-          anchorSize={8 / stageScale}
-          anchorCornerRadius={2 / stageScale}
-          rotateAnchorOffset={20 / stageScale}
+          anchorStrokeWidth={trAnchorStroke}
+          anchorSize={trAnchorSize}
+          anchorCornerRadius={trAnchorRadius}
+          rotateAnchorOffset={trRotateOffset}
           rotateAnchorCursor="grab"
           padding={4}
           boundBoxFunc={(_oldBox, newBox) => {

@@ -200,7 +200,7 @@ export function SharedView() {
                   height={f.heightPx}
                   align="center"
                   verticalAlign="middle"
-                  fontSize={12}
+                  fontSize={Math.max(10, Math.min(14, f.widthPx * 0.12))}
                   fill="#264653"
                   fontFamily="DM Sans, sans-serif"
                 />
