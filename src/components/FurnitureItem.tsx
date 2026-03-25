@@ -22,7 +22,7 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
       trRef.current.nodes([groupRef.current]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [isSelected]);
+  }, [isSelected, item.widthPx, item.heightPx, item.rotation]);
 
   const handleDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
