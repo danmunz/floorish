@@ -75,7 +75,7 @@ export function FloorPlanLoader() {
                     if (e.key === 'Enter') {
                       const trimmed = editValue.trim();
                       if (trimmed) {
-                        dispatch({ type: 'UPDATE_FLOOR_PLAN', payload: { id: fp.id, updates: { name: trimmed } } });
+                        dispatch({ type: 'RENAME_FLOOR_PLAN', payload: { id: fp.id, name: trimmed } });
                       }
                       setEditingId(null);
                     } else if (e.key === 'Escape') {
@@ -85,7 +85,7 @@ export function FloorPlanLoader() {
                   onBlur={() => {
                     const trimmed = editValue.trim();
                     if (trimmed) {
-                      dispatch({ type: 'UPDATE_FLOOR_PLAN', payload: { id: fp.id, updates: { name: trimmed } } });
+                      dispatch({ type: 'RENAME_FLOOR_PLAN', payload: { id: fp.id, name: trimmed } });
                     }
                     setEditingId(null);
                   }}

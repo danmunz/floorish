@@ -95,6 +95,7 @@ export interface AppState {
 export type AppAction =
   | { type: 'ADD_FLOOR_PLAN'; payload: FloorPlan }
   | { type: 'UPDATE_FLOOR_PLAN'; payload: { id: string; updates: Partial<FloorPlan> } }
+  | { type: 'RENAME_FLOOR_PLAN'; payload: { id: string; name: string } }
   | { type: 'REMOVE_FLOOR_PLAN'; payload: string }
   | { type: 'SET_ACTIVE_FLOOR_PLAN'; payload: string }
   | { type: 'SET_CALIBRATION'; payload: { floorPlanId: string; pixelsPerFoot: number; points: [Point, Point]; distanceFt: number } }
