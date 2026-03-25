@@ -98,6 +98,21 @@ describe('floor plan actions', () => {
     expect(result.current.state.activeFloorPlanId).toBe('fp-2');
     expect(result.current.state.selectedFurnitureId).toBeNull();
   });
+
+  it('UPDATE_FLOOR_PLAN renames a floor plan', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_FLOOR_PLAN', payload: makeFloorPlan() }));
+    act(() => result.current.dispatch({
+      type: 'UPDATE_FLOOR_PLAN',
+      payload: { id: 'fp-1', updates: { name: 'Living Room' } },
+    }));
+
+    const fp = result.current.state.floorPlans[0];
+    expect(fp.name).toBe('Living Room');
+    expect(fp.id).toBe('fp-1');
+    expect(fp.imageUrl).toBe('test.png'); // unchanged
+  });
 });
 
 describe('furniture actions', () => {
