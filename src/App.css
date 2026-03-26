@@ -393,7 +393,17 @@ html, body, #root {
   transition: opacity 0.15s;
 }
 .floor-tab-close:hover { opacity: 1; }
-.floor-tab-name { }
+.floor-tab-name { cursor: default; }
+.floor-tab-name-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  width: 10ch;
+  min-width: 4ch;
+  padding: 0;
+}
 .add-tab { font-size: 18px; padding: 6px 14px; }
 
 .drop-zone { display: flex; align-items: center; justify-content: center; flex: 1; cursor: pointer; }

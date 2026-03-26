@@ -35,6 +35,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
           fp.id === action.payload.id ? { ...fp, ...action.payload.updates } : fp
         ),
       };
+    case 'RENAME_FLOOR_PLAN':
+      return {
+        ...state,
+        floorPlans: state.floorPlans.map(fp =>
+          fp.id === action.payload.id ? { ...fp, name: action.payload.name } : fp
+        ),
+      };
     case 'REMOVE_FLOOR_PLAN':
       return {
         ...state,

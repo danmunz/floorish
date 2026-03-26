@@ -98,6 +98,21 @@ describe('floor plan actions', () => {
     expect(result.current.state.activeFloorPlanId).toBe('fp-2');
     expect(result.current.state.selectedFurnitureId).toBeNull();
   });
+
+  it('RENAME_FLOOR_PLAN renames a floor plan', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_FLOOR_PLAN', payload: makeFloorPlan() }));
+    act(() => result.current.dispatch({
+      type: 'RENAME_FLOOR_PLAN',
+      payload: { id: 'fp-1', name: 'Living Room' },
+    }));
+
+    const fp = result.current.state.floorPlans[0];
+    expect(fp.name).toBe('Living Room');
+    expect(fp.id).toBe('fp-1');
+    expect(fp.imageUrl).toBe('test.png'); // unchanged
+  });
 });
 
 describe('furniture actions', () => {
@@ -398,6 +413,20 @@ describe('undo/redo', () => {
     act(() => result.current.dispatch({ type: 'SELECT_FURNITURE', payload: null }));
 
     expect(result.current.canUndo).toBe(false);
+  });
+
+  it('can undo a floor plan rename', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_FLOOR_PLAN', payload: makeFloorPlan() }));
+    act(() => result.current.dispatch({
+      type: 'RENAME_FLOOR_PLAN',
+      payload: { id: 'fp-1', name: 'Kitchen' },
+    }));
+    expect(result.current.state.floorPlans[0].name).toBe('Kitchen');
+
+    act(() => result.current.undo());
+    expect(result.current.state.floorPlans[0].name).toBe('Test Plan');
   });
 
   it('clears future on new action after undo', () => {

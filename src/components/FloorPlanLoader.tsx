@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import { useAuth } from '../hooks/useAuth';
 import { uploadFloorPlanImage } from '../lib/storage';
@@ -8,6 +8,8 @@ export function FloorPlanLoader() {
   const { state, dispatch } = useAppState();
   const { user, isGuest } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
@@ -64,7 +66,44 @@ export function FloorPlanLoader() {
               className={`floor-tab ${fp.id === state.activeFloorPlanId ? 'active' : ''}`}
               onClick={() => dispatch({ type: 'SET_ACTIVE_FLOOR_PLAN', payload: fp.id })}
             >
-              <span className="floor-tab-name">{fp.name}</span>
+              {editingId === fp.id ? (
+                <input
+                  className="floor-tab-name-input"
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const trimmed = editValue.trim();
+                      if (trimmed) {
+                        dispatch({ type: 'RENAME_FLOOR_PLAN', payload: { id: fp.id, name: trimmed } });
+                      }
+                      setEditingId(null);
+                    } else if (e.key === 'Escape') {
+                      setEditingId(null);
+                    }
+                  }}
+                  onBlur={() => {
+                    const trimmed = editValue.trim();
+                    if (trimmed) {
+                      dispatch({ type: 'RENAME_FLOOR_PLAN', payload: { id: fp.id, name: trimmed } });
+                    }
+                    setEditingId(null);
+                  }}
+                  onClick={e => e.stopPropagation()}
+                  autoFocus
+                />
+              ) : (
+                <span
+                  className="floor-tab-name"
+                  onDoubleClick={e => {
+                    e.stopPropagation();
+                    setEditingId(fp.id);
+                    setEditValue(fp.name);
+                  }}
+                >
+                  {fp.name}
+                </span>
+              )}
               {fp.pixelsPerFoot && <span className="floor-tab-cal">✓</span>}
               <button
                 className="floor-tab-close"
