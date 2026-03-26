@@ -10,6 +10,7 @@ import {
   snapToGridValue,
   snapAngle,
   rectsOverlap,
+  calculateLabelFontSize,
 } from '../utils/geometry';
 
 describe('parseDimensionText', () => {
@@ -186,5 +187,52 @@ describe('rectsOverlap', () => {
     const a = { x: 0, y: 0, width: 20, height: 20 };
     const b = { x: 5, y: 5, width: 5, height: 5 };
     expect(rectsOverlap(a, b)).toBe(true);
+  });
+});
+
+describe('calculateLabelFontSize', () => {
+  it('returns max size for wide item with short name', () => {
+    // 200px wide, 100px tall, short name
+    expect(calculateLabelFontSize('Sofa', 200, 100)).toBe(18);
+  });
+
+  it('returns smaller size for narrow item', () => {
+    const size = calculateLabelFontSize('Bookshelf', 40, 30);
+    expect(size).toBeGreaterThan(0);
+    expect(size).toBeLessThan(18);
+  });
+
+  it('fits long name with word wrap at moderate size', () => {
+    const size = calculateLabelFontSize('Sectional Sofa with Chaise', 200, 80);
+    expect(size).toBeGreaterThan(0);
+    expect(size).toBeLessThanOrEqual(18);
+  });
+
+  it('returns 0 for tiny item where text cannot fit', () => {
+    expect(calculateLabelFontSize('Bookshelf', 10, 10)).toBe(0);
+  });
+
+  it('returns max size for single character name', () => {
+    expect(calculateLabelFontSize('X', 200, 100)).toBe(18);
+  });
+
+  it('returns 0 for empty text', () => {
+    expect(calculateLabelFontSize('', 200, 100)).toBe(0);
+  });
+
+  it('returns 0 for zero-width area', () => {
+    expect(calculateLabelFontSize('Sofa', 0, 100)).toBe(0);
+  });
+
+  it('respects custom min/max options', () => {
+    const size = calculateLabelFontSize('Sofa', 200, 100, { minSize: 10, maxSize: 12 });
+    expect(size).toBe(12);
+  });
+
+  it('handles narrow height constraint', () => {
+    // Very wide but very short — height limits font size
+    const size = calculateLabelFontSize('Table', 300, 12);
+    expect(size).toBeGreaterThan(0);
+    expect(size).toBeLessThanOrEqual(9); // ~12 / 1.3 line height
   });
 });

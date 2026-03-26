@@ -120,3 +120,34 @@ export function rectsOverlap(
     a.y + a.height > b.y
   );
 }
+
+/**
+ * Calculate the optimal font size for a label to fit within the given bounds.
+ * Returns 0 if the text cannot fit at the minimum font size (signal to hide).
+ */
+export function calculateLabelFontSize(
+  text: string,
+  availWidth: number,
+  availHeight: number,
+  options?: { minSize?: number; maxSize?: number; maxLines?: number }
+): number {
+  const minSize = options?.minSize ?? 7;
+  const maxSize = options?.maxSize ?? 18;
+  const maxLines = options?.maxLines ?? 3;
+  const charWidthRatio = 0.6; // average character width / fontSize for DM Sans
+  const lineHeightRatio = 1.3;
+
+  if (availWidth <= 0 || availHeight <= 0 || text.length === 0) return 0;
+
+  for (let size = maxSize; size >= minSize; size--) {
+    const charWidth = size * charWidthRatio;
+    const charsPerLine = Math.floor(availWidth / charWidth);
+    if (charsPerLine < 1) continue;
+    const linesNeeded = Math.ceil(text.length / charsPerLine);
+    const lines = Math.min(linesNeeded, maxLines);
+    const textHeight = lines * size * lineHeightRatio;
+    // Check if text fits: all chars visible within maxLines, and height fits
+    if (linesNeeded <= maxLines && textHeight <= availHeight) return size;
+  }
+  return 0;
+}
