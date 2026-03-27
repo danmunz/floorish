@@ -1,5 +1,9 @@
 import type { FloorPlan } from '../types';
 
+export function hasCalibratedFloorPlan(floorPlans: FloorPlan[]): boolean {
+  return floorPlans.some((floorPlan) => floorPlan.pixelsPerFoot !== null);
+}
+
 export function hasCalibrationTransition(
   previousFloorPlans: FloorPlan[],
   currentFloorPlans: FloorPlan[]

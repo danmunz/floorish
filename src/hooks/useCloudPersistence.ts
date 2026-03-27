@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAppState } from './useAppState';
 import { useAuth } from './useAuth';
+import type { AppState } from '../types';
 import {
   updateProject,
   upsertFloorPlan,
@@ -87,7 +88,7 @@ async function runWithRetry(task: () => Promise<void>): Promise<void> {
   }
 }
 
-function hasCloudRelevantChanges(prev: ReturnType<typeof useAppState>['state'], curr: ReturnType<typeof useAppState>['state']): boolean {
+function hasCloudRelevantChanges(prev: AppState, curr: AppState): boolean {
   if (
     curr.showGrid !== prev.showGrid ||
     curr.gridSizeIn !== prev.gridSizeIn ||
@@ -125,6 +126,7 @@ export function useCloudPersistence(projectId: string | null) {
   const { state } = useAppState();
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const prevStateRef = useRef(state);
+  const latestStateRef = useRef(state);
   const savingRef = useRef(false);
   const pendingSaveRef = useRef(false);
   const dirtyRef = useRef(false);
@@ -134,6 +136,8 @@ export function useCloudPersistence(projectId: string | null) {
     lastSavedAt: null,
     errorMessage: null,
   });
+
+  latestStateRef.current = state;
 
   const saveToCloud = useCallback(async () => {
     if (!user || isGuest || !projectId) return;
@@ -146,7 +150,7 @@ export function useCloudPersistence(projectId: string | null) {
     savingRef.current = true;
 
     const prev = prevStateRef.current;
-    const curr = state;
+    const curr = latestStateRef.current;
 
     try {
       if (!hasCloudRelevantChanges(prev, curr)) {
@@ -273,14 +277,14 @@ export function useCloudPersistence(projectId: string | null) {
         void saveToCloud();
       }
     }
-  }, [user, isGuest, projectId, state]);
+  }, [user, isGuest, projectId]);
 
   // Handle project switches safely. We keep null -> id transitions untouched so a
   // newly-created project still receives the existing local draft on first sync.
   useEffect(() => {
     const previousProjectId = previousProjectIdRef.current;
     if (previousProjectId && projectId && previousProjectId !== projectId) {
-      prevStateRef.current = state;
+      prevStateRef.current = latestStateRef.current;
       dirtyRef.current = false;
       pendingSaveRef.current = false;
       clearTimeout(timerRef.current);
@@ -294,7 +298,7 @@ export function useCloudPersistence(projectId: string | null) {
     }
 
     previousProjectIdRef.current = projectId;
-  }, [projectId, state]);
+  }, [projectId]);
 
   // Debounced autosave on state changes
   useEffect(() => {

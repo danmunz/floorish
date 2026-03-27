@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasCalibrationTransition } from './calibrationTransitions';
+import { hasCalibrationTransition, hasCalibratedFloorPlan } from './calibrationTransitions';
 import type { FloorPlan } from '../types';
 
 function makeFloorPlan(overrides?: Partial<FloorPlan>): FloorPlan {
@@ -41,5 +41,25 @@ describe('hasCalibrationTransition', () => {
     const current = [makeFloorPlan({ id: 'fp-1', pixelsPerFoot: 45 })];
 
     expect(hasCalibrationTransition(previous, current)).toBe(false);
+  });
+});
+
+describe('hasCalibratedFloorPlan', () => {
+  it('returns false when no floor plans are calibrated', () => {
+    const floorPlans = [
+      makeFloorPlan({ id: 'fp-1', pixelsPerFoot: null }),
+      makeFloorPlan({ id: 'fp-2', pixelsPerFoot: null }),
+    ];
+
+    expect(hasCalibratedFloorPlan(floorPlans)).toBe(false);
+  });
+
+  it('returns true when at least one floor plan is calibrated', () => {
+    const floorPlans = [
+      makeFloorPlan({ id: 'fp-1', pixelsPerFoot: null }),
+      makeFloorPlan({ id: 'fp-2', pixelsPerFoot: 64 }),
+    ];
+
+    expect(hasCalibratedFloorPlan(floorPlans)).toBe(true);
   });
 });

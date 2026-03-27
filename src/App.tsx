@@ -15,7 +15,7 @@ import { SharedView } from './components/SharedView';
 import { useCloudPersistence } from './hooks/useCloudPersistence';
 import { uploadFloorPlanImage } from './lib/storage';
 import { createProject, fetchProjects, updateProject } from './lib/api';
-import { hasCalibrationTransition } from './utils/calibrationTransitions';
+import { hasCalibrationTransition, hasCalibratedFloorPlan } from './utils/calibrationTransitions';
 import { getNextNewProjectName } from './utils/projectNames';
 import './App.css';
 
@@ -99,7 +99,11 @@ function AppInner() {
 
     if (user && !isGuest && !projectId) {
       const justCalibrated = hasCalibrationTransition(previousFloorPlans, currentFloorPlans);
-      if (justCalibrated) {
+      const hadCalibratedFloorPlan = hasCalibratedFloorPlan(previousFloorPlans);
+      const hasCalibratedFloorPlanNow = hasCalibratedFloorPlan(currentFloorPlans);
+      const loadedPreCalibratedDraft = !hadCalibratedFloorPlan && hasCalibratedFloorPlanNow;
+
+      if (justCalibrated || loadedPreCalibratedDraft) {
         void createProjectFromCurrentWork();
       }
     }
