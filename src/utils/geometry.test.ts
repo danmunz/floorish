@@ -208,6 +208,17 @@ describe('calculateLabelFontSize', () => {
     expect(size).toBeLessThanOrEqual(18);
   });
 
+  it('treats word-wrapped overflow as not fitting within max lines', () => {
+    // At this width and size, naive char counting would say 2 lines, but word-wrap
+    // needs 3 lines: "alpha" / "beta" / "gamma".
+    const size = calculateLabelFontSize('alpha beta gamma', 54, 30, {
+      minSize: 10,
+      maxSize: 10,
+      maxLines: 2,
+    });
+    expect(size).toBe(0);
+  });
+
   it('returns 0 for tiny item where text cannot fit', () => {
     expect(calculateLabelFontSize('Bookshelf', 10, 10)).toBe(0);
   });

@@ -113,11 +113,13 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
   const isEllipse = item.shape === 'ellipse';
   const labelPadX = 8;
   const labelPadY = 4;
-  const availW = (isEllipse ? item.widthPx * 0.7 : item.widthPx) - labelPadX;
-  const availH = (isEllipse ? item.heightPx * 0.7 : item.heightPx) - labelPadY;
+  const availW = Math.max(1, (isEllipse ? item.widthPx * 0.7 : item.widthPx) - labelPadX);
+  const availH = Math.max(1, (isEllipse ? item.heightPx * 0.7 : item.heightPx) - labelPadY);
   const baseFontSize = calculateLabelFontSize(item.name, availW, availH);
   const labelFontSize = baseFontSize > 0 ? Math.max(baseFontSize, 10 / stageScale) : 0;
   const showLabel = labelFontSize > 0 || isSelected;
+  const labelBoxX = isEllipse ? item.widthPx * 0.15 : labelPadX / 2;
+  const labelBoxY = isEllipse ? item.heightPx * 0.15 : labelPadY / 2;
 
   // Clamp scale-compensated transformer values to prevent them from growing
   // absurdly large at low zoom or vanishing at high zoom.
@@ -145,14 +147,16 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
         {showLabel && (
           <Text
             text={item.name}
-            x={isEllipse ? item.widthPx * 0.15 : 4}
-            y={item.heightPx / 2 - (labelFontSize > 0 ? labelFontSize : 10 / stageScale) / 2}
+            x={labelBoxX}
+            y={labelBoxY}
             width={availW}
+            height={availH}
             fontSize={labelFontSize > 0 ? labelFontSize : 10 / stageScale}
             fill={item.color}
             fontFamily="'DM Sans', sans-serif"
             fontStyle="600"
             align="center"
+            verticalAlign="middle"
             listening={false}
             wrap="word"
             ellipsis
