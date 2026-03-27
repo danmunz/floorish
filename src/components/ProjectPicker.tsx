@@ -16,7 +16,7 @@ import { usePersistence } from '../hooks/usePersistence';
 import sampleFloorPlanUrl from '../assets/sample_floorplan.png';
 
 interface ProjectPickerProps {
-  onProjectLoaded: (projectId: string) => void;
+  onProjectLoaded: (project: Pick<Project, 'id' | 'name'>) => void;
 }
 
 export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
@@ -128,7 +128,7 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
         },
       });
 
-      onProjectLoaded(project.id);
+      onProjectLoaded({ id: project.id, name: project.name });
     } catch (err) {
       console.error('Failed to open project:', err);
     }
@@ -176,12 +176,16 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
                 {renamingId === p.id ? (
                   <input
                     className="project-rename-input"
+                    aria-label="Rename project"
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={() => handleRename(p.id)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleRename(p.id);
-                      if (e.key === 'Escape') setRenamingId(null);
+                      if (e.key === 'Escape') {
+                        setRenameValue(p.name);
+                        setRenamingId(null);
+                      }
                     }}
                     onClick={(e) => e.stopPropagation()}
                     autoFocus

@@ -7,8 +7,9 @@ A browser-based floor plan studio for arranging furniture to scale. Drop in a fl
 ## Features
 
 - **User accounts** — Sign in with Google to save projects to the cloud; or continue as a guest with local storage
-- **Cloud autosave** — Projects, floor plans, and furniture layouts auto-save to Supabase as you work
-- **Project management** — Create, rename, and manage multiple projects from a dashboard
+- **Cloud autosave** — Signed-in users always autosave to Supabase while editing, with visible save status in the workspace header
+- **Smart project creation** — A cloud project is created automatically on first calibration as New Project, then New Project 2, New Project 3, and so on
+- **Project management** — Rename projects at any time from the workspace header or project dashboard, and manage multiple projects from the dashboard
 - **Floor plan import** — Load floor plan images via file picker or drag-and-drop; images stored in Supabase Storage
 - **Scale calibration** — Set two reference points and a known distance to establish real-world scale; OCR auto-detects printed dimensions via Tesseract.js
 - **Furniture catalog** — Pre-built library of common furniture (seating, tables, beds, storage, appliances, bathroom fixtures) with accurate real-world dimensions
