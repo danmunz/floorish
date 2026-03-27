@@ -3,7 +3,7 @@ import { Group, Rect, Ellipse, Line, Text, Transformer } from 'react-konva';
 import Konva from 'konva';
 import { useAppState } from '../hooks/useAppState';
 import type { PlacedFurniture } from '../types';
-import { snapAngle } from '../utils/geometry';
+import { snapAngle, calculateLabelFontSize } from '../utils/geometry';
 
 interface Props {
   item: PlacedFurniture;
@@ -110,7 +110,16 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
     );
   }
 
-  const labelFontSize = Math.max(10 / stageScale, Math.min(14, item.widthPx * 0.12));
+  const isEllipse = item.shape === 'ellipse';
+  const labelPadX = 8;
+  const labelPadY = 4;
+  const availW = Math.max(1, (isEllipse ? item.widthPx * 0.7 : item.widthPx) - labelPadX);
+  const availH = Math.max(1, (isEllipse ? item.heightPx * 0.7 : item.heightPx) - labelPadY);
+  const baseFontSize = calculateLabelFontSize(item.name, availW, availH);
+  const labelFontSize = baseFontSize > 0 ? Math.max(baseFontSize, 10 / stageScale) : 0;
+  const showLabel = labelFontSize > 0 || isSelected;
+  const labelBoxX = isEllipse ? item.widthPx * 0.15 : labelPadX / 2;
+  const labelBoxY = isEllipse ? item.heightPx * 0.15 : labelPadY / 2;
 
   // Clamp scale-compensated transformer values to prevent them from growing
   // absurdly large at low zoom or vanishing at high zoom.
@@ -135,20 +144,24 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
 
       >
         {shape}
-        <Text
-          text={item.name}
-          x={4}
-          y={item.heightPx / 2 - labelFontSize / 2}
-          width={item.widthPx - 8}
-          fontSize={labelFontSize}
-          fill={item.color}
-          fontFamily="'DM Sans', sans-serif"
-          fontStyle="600"
-          align="center"
-          listening={false}
-          wrap="none"
-          ellipsis
-        />
+        {showLabel && (
+          <Text
+            text={item.name}
+            x={labelBoxX}
+            y={labelBoxY}
+            width={availW}
+            height={availH}
+            fontSize={labelFontSize > 0 ? labelFontSize : 10 / stageScale}
+            fill={item.color}
+            fontFamily="'DM Sans', sans-serif"
+            fontStyle="600"
+            align="center"
+            verticalAlign="middle"
+            listening={false}
+            wrap="word"
+            ellipsis
+          />
+        )}
       </Group>
       {isSelected && (
         <Transformer

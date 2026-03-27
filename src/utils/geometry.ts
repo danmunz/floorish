@@ -1,5 +1,57 @@
 import type { DetectedDimension, Point } from '../types';
 
+const LABEL_CHAR_WIDTH_RATIO = 0.6; // average character width / fontSize for DM Sans
+const LABEL_LINE_HEIGHT_RATIO = 1.3;
+
+function estimateWrappedLines(text: string, charsPerLine: number): number {
+  if (!text.trim()) return 1;
+
+  const paragraphs = text.split(/\n/);
+  let totalLines = 0;
+
+  for (const paragraph of paragraphs) {
+    if (!paragraph.trim()) {
+      totalLines += 1;
+      continue;
+    }
+
+    const words = paragraph.trim().split(/\s+/);
+    let lines = 1;
+    let currentLineLength = 0;
+
+    for (const word of words) {
+      const wordLength = word.length;
+
+      // Konva word wrapping will still break very long words when needed.
+      if (wordLength > charsPerLine) {
+        if (currentLineLength > 0) {
+          lines += 1;
+          currentLineLength = 0;
+        }
+        const fullWordLines = Math.floor((wordLength - 1) / charsPerLine);
+        lines += fullWordLines;
+        currentLineLength = wordLength % charsPerLine;
+        continue;
+      }
+
+      const nextLength = currentLineLength === 0
+        ? wordLength
+        : currentLineLength + 1 + wordLength;
+
+      if (nextLength <= charsPerLine) {
+        currentLineLength = nextLength;
+      } else {
+        lines += 1;
+        currentLineLength = wordLength;
+      }
+    }
+
+    totalLines += lines;
+  }
+
+  return totalLines;
+}
+
 /**
  * Parse dimension strings like 14'3" x 12', 21' x 20'6", 16'10", etc.
  * Returns { feet, inches, totalFeet } for each match.
@@ -119,4 +171,33 @@ export function rectsOverlap(
     a.y < b.y + b.height &&
     a.y + a.height > b.y
   );
+}
+
+/**
+ * Calculate the optimal font size for a label to fit within the given bounds.
+ * Returns 0 if the text cannot fit at the minimum font size (signal to hide).
+ */
+export function calculateLabelFontSize(
+  text: string,
+  availWidth: number,
+  availHeight: number,
+  options?: { minSize?: number; maxSize?: number; maxLines?: number }
+): number {
+  const minSize = options?.minSize ?? 7;
+  const maxSize = options?.maxSize ?? 18;
+  const maxLines = options?.maxLines ?? 3;
+
+  if (availWidth <= 0 || availHeight <= 0 || text.length === 0) return 0;
+
+  for (let size = maxSize; size >= minSize; size--) {
+    const charWidth = size * LABEL_CHAR_WIDTH_RATIO;
+    const charsPerLine = Math.floor(availWidth / charWidth);
+    if (charsPerLine < 1) continue;
+    const linesNeeded = estimateWrappedLines(text, charsPerLine);
+    const lines = Math.min(linesNeeded, maxLines);
+    const textHeight = lines * size * LABEL_LINE_HEIGHT_RATIO;
+    // Check if text fits: all chars visible within maxLines, and height fits
+    if (linesNeeded <= maxLines && textHeight <= availHeight) return size;
+  }
+  return 0;
 }
