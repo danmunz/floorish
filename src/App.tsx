@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useAppState } from './hooks/useAppState';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -14,45 +14,148 @@ import { UserMenu } from './components/UserMenu';
 import { SharedView } from './components/SharedView';
 import { useCloudPersistence } from './hooks/useCloudPersistence';
 import { uploadFloorPlanImage } from './lib/storage';
-import { createProject } from './lib/api';
+import { createProject, fetchProjects, updateProject } from './lib/api';
+import { hasCalibrationTransition } from './utils/calibrationTransitions';
+import { getNextNewProjectName } from './utils/projectNames';
 import './App.css';
+
+interface ActiveProject {
+  id: string;
+  name: string;
+}
 
 function AppInner() {
   const { state, dispatch, undo, redo } = useAppState();
   const { user, isGuest } = useAuth();
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [project, setProject] = useState<ActiveProject | null>(null);
   const [showProjectPicker, setShowProjectPicker] = useState(false);
+  const [isEditingProjectName, setIsEditingProjectName] = useState(false);
+  const [projectNameDraft, setProjectNameDraft] = useState('');
+  const [isRenamingProject, setIsRenamingProject] = useState(false);
+  const [projectRenameError, setProjectRenameError] = useState<string | null>(null);
   const canvasRef = useRef<CanvasHandle>(null);
+  const creatingProjectRef = useRef(false);
+  const previousFloorPlansRef = useRef(state.floorPlans);
+
+  const projectId = project?.id ?? null;
+  const hasWorkingDraft = state.floorPlans.length > 0 || state.furniture.length > 0;
 
   // Cloud autosave for authenticated users
-  useCloudPersistence(projectId);
+  const cloudSave = useCloudPersistence(projectId);
 
-  // Show project picker for authenticated users who haven't selected a project
   useEffect(() => {
-    if (user && !isGuest && !projectId) {
-      setShowProjectPicker(true);
+    if (!user || isGuest) {
+      setProject(null);
+      setProjectRenameError(null);
+      setIsEditingProjectName(false);
+    }
+  }, [user, isGuest]);
+
+  // Show project picker for authenticated users who haven't selected a project.
+  // Once they start working locally, hide picker and let first calibration create project.
+  useEffect(() => {
+    if (!user || isGuest) {
+      setShowProjectPicker(false);
+      return;
+    }
+    if (projectId) {
+      setShowProjectPicker(false);
+      return;
+    }
+    setShowProjectPicker(!hasWorkingDraft);
+  }, [user, isGuest, projectId, hasWorkingDraft]);
+
+  useEffect(() => {
+    if (project) {
+      setProjectNameDraft(project.name);
+    } else {
+      setProjectNameDraft('');
+    }
+  }, [project]);
+
+  const createProjectFromCurrentWork = useCallback(async () => {
+    if (!user || isGuest || projectId || creatingProjectRef.current) {
+      return;
+    }
+
+    creatingProjectRef.current = true;
+    try {
+      const existingProjects = await fetchProjects();
+      const suggestedName = getNextNewProjectName(existingProjects.map((entry) => entry.name));
+      const createdProject = await createProject(user.id, suggestedName);
+      setProject({ id: createdProject.id, name: createdProject.name });
+      setProjectRenameError(null);
+    } catch (err) {
+      console.error('Auto-create project failed:', err);
+    } finally {
+      creatingProjectRef.current = false;
     }
   }, [user, isGuest, projectId]);
 
-  // When floor plans appear (via image drop/browse or import), auto-create a
-  // project for authenticated users and switch to canvas view.
+  // Auto-create on first calibration only for authenticated users.
   useEffect(() => {
-    if (!showProjectPicker || state.floorPlans.length === 0) return;
+    const previousFloorPlans = previousFloorPlansRef.current;
+    const currentFloorPlans = state.floorPlans;
+
     if (user && !isGuest && !projectId) {
-      const name = state.floorPlans[0]?.name || 'Untitled Project';
-      createProject(user.id, name)
-        .then(project => {
-          setProjectId(project.id);
-          setShowProjectPicker(false);
-        })
-        .catch(err => {
-          console.error('Auto-create project failed:', err);
-          setShowProjectPicker(false);
-        });
-    } else {
-      setShowProjectPicker(false);
+      const justCalibrated = hasCalibrationTransition(previousFloorPlans, currentFloorPlans);
+      if (justCalibrated) {
+        void createProjectFromCurrentWork();
+      }
     }
-  }, [state.floorPlans.length, showProjectPicker, user, isGuest, projectId]);
+
+    previousFloorPlansRef.current = currentFloorPlans;
+  }, [state.floorPlans, user, isGuest, projectId, createProjectFromCurrentWork]);
+
+  const commitProjectRename = useCallback(async () => {
+    if (!project || isRenamingProject) return;
+
+    const trimmedName = projectNameDraft.trim();
+    if (!trimmedName) {
+      setProjectNameDraft(project.name);
+      setIsEditingProjectName(false);
+      return;
+    }
+
+    if (trimmedName === project.name) {
+      setIsEditingProjectName(false);
+      setProjectRenameError(null);
+      return;
+    }
+
+    setIsRenamingProject(true);
+    try {
+      await updateProject(project.id, { name: trimmedName });
+      setProject((previous) => (previous ? { ...previous, name: trimmedName } : previous));
+      setProjectRenameError(null);
+    } catch (err) {
+      console.error('Project rename failed:', err);
+      setProjectRenameError('Rename failed. Try again.');
+      setProjectNameDraft(project.name);
+    } finally {
+      setIsRenamingProject(false);
+      setIsEditingProjectName(false);
+    }
+  }, [project, projectNameDraft, isRenamingProject]);
+
+  const cancelProjectRename = useCallback(() => {
+    setProjectNameDraft(project?.name ?? '');
+    setProjectRenameError(null);
+    setIsEditingProjectName(false);
+  }, [project]);
+
+  const saveStatusLabel = useMemo(() => {
+    if (!user || isGuest) return null;
+    if (!projectId) {
+      return hasWorkingDraft ? 'Autosave starts after first calibration' : 'Select or start a project';
+    }
+    if (cloudSave.status === 'saving') return 'Saving...';
+    if (cloudSave.status === 'error') return 'Autosave issue';
+    if (cloudSave.status === 'saved' && cloudSave.lastSavedAt) {
+      return `Saved ${cloudSave.lastSavedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+    }
+    return 'Autosave on';
+  }, [user, isGuest, projectId, hasWorkingDraft, cloudSave.status, cloudSave.lastSavedAt]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
@@ -133,6 +236,62 @@ function AppInner() {
           <span className="logo-text">Floorish</span>
         </div>
         <FloorPlanLoader />
+
+        {user && !isGuest && !showProjectPicker && (
+          <div className="project-header-meta">
+            {project ? (
+              <div className="project-header-topline">
+                {isEditingProjectName ? (
+                  <input
+                    className="project-header-name-input"
+                    aria-label="Project name"
+                    value={projectNameDraft}
+                    onChange={(event) => setProjectNameDraft(event.target.value)}
+                    onBlur={() => {
+                      void commitProjectRename();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        void commitProjectRename();
+                      }
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        cancelProjectRename();
+                      }
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <button
+                    className="project-header-name-btn"
+                    onClick={() => {
+                      setProjectNameDraft(project.name);
+                      setProjectRenameError(null);
+                      setIsEditingProjectName(true);
+                    }}
+                    title="Rename project"
+                  >
+                    <span className="project-header-name-text">{project.name}</span>
+                    <span className="project-header-name-edit">Rename</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="project-header-topline">
+                <span className="project-header-draft-label">Draft Project</span>
+              </div>
+            )}
+
+            {saveStatusLabel && (
+              <span className={`project-save-status project-save-status-${cloudSave.status}`}>
+                {saveStatusLabel}
+              </span>
+            )}
+            {projectRenameError && <span className="project-rename-error">{projectRenameError}</span>}
+          </div>
+        )}
+
         <UserMenu />
       </header>
 
@@ -141,8 +300,8 @@ function AppInner() {
       {showProjectPicker && !isGuest ? (
         <div className="app-body">
           <ProjectPicker
-            onProjectLoaded={(id) => {
-              setProjectId(id);
+            onProjectLoaded={(loadedProject) => {
+              setProject({ id: loadedProject.id, name: loadedProject.name });
               setShowProjectPicker(false);
             }}
           />
