@@ -40,6 +40,14 @@ function AppInner() {
   const projectId = project?.id ?? null;
   const hasWorkingDraft = state.floorPlans.length > 0 || state.furniture.length > 0;
   const hasCalibratedDraft = hasCalibratedFloorPlan(state.floorPlans);
+  const calibratedFloorPlanKey = useMemo(
+    () => state.floorPlans
+      .filter((floorPlan) => floorPlan.pixelsPerFoot !== null)
+      .map((floorPlan) => `${floorPlan.id}:${floorPlan.pixelsPerFoot}:${floorPlan.calibrationDistanceFt ?? ''}`)
+      .sort()
+      .join('|'),
+    [state.floorPlans]
+  );
 
   // Cloud autosave for authenticated users
   const cloudSave = useCloudPersistence(projectId);
@@ -105,10 +113,10 @@ function AppInner() {
 
   // Auto-create for authenticated drafts once calibration exists.
   useEffect(() => {
-    if (user && !isGuest && !projectId && hasCalibratedDraft) {
+    if (user && !isGuest && !projectId && calibratedFloorPlanKey.length > 0) {
       void createProjectFromCurrentWork();
     }
-  }, [user, isGuest, projectId, hasCalibratedDraft, state.furniture.length, createProjectFromCurrentWork]);
+  }, [user, isGuest, projectId, calibratedFloorPlanKey, state.furniture.length, createProjectFromCurrentWork]);
 
   const commitProjectRename = useCallback(async () => {
     if (!project || isRenamingProject) return;

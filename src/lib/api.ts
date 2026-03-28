@@ -27,23 +27,40 @@ export async function fetchProjects(): Promise<Project[]> {
 
 export async function ensureProfile(userId: string, meta?: Record<string, string>): Promise<void> {
   if (!supabase) return;
-  const { data } = await supabase.from('profiles').select('id').eq('id', userId).single();
-  if (!data) {
-    await supabase.from('profiles').insert({
-      id: userId,
-      display_name: meta?.full_name ?? meta?.name ?? null,
-      avatar_url: meta?.avatar_url ?? null,
-    });
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (data) {
+    return;
+  }
+
+  const { error: insertError } = await supabase.from('profiles').insert({
+    id: userId,
+    display_name: meta?.full_name ?? meta?.name ?? null,
+    avatar_url: meta?.avatar_url ?? null,
+  });
+
+  if (insertError && insertError.code !== '23505') {
+    // Ignore duplicate key race; another request may have inserted profile.
+    throw insertError;
   }
 }
 
 export async function createProject(
   userId: string,
-  name = 'Untitled Project'
+  name = 'Untitled Project',
+  userMeta?: Record<string, string>
 ): Promise<Project> {
   if (!supabase) throw new Error('Supabase not configured');
   // Ensure profile exists (trigger may not have fired for pre-migration users)
-  await ensureProfile(userId);
+  await ensureProfile(userId, userMeta);
   const { data, error } = await supabase
     .from('projects')
     .insert({ user_id: userId, name })
