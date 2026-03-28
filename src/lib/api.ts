@@ -15,42 +15,84 @@ export interface Project {
   updated_at: string;
 }
 
+const DEFAULT_PROJECT_SETTINGS = {
+  showGrid: true,
+  gridSizeIn: 12,
+  snapToGrid: false,
+};
+
+function isPolicyRecursionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const maybePostgrest = error as { code?: string; message?: string };
+  return maybePostgrest.code === '42P17'
+    || /infinite recursion detected in policy/i.test(maybePostgrest.message ?? '');
+}
+
 export async function fetchProjects(): Promise<Project[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from('projects')
     .select('*')
     .order('updated_at', { ascending: false });
-  if (error) throw error;
+  if (error) {
+    if (isPolicyRecursionError(error)) {
+      console.warn('Projects query blocked by recursive RLS policy; returning empty list until DB policies are fixed.');
+      return [];
+    }
+    throw error;
+  }
   return (data ?? []).map(rowToProject);
 }
 
 export async function ensureProfile(userId: string, meta?: Record<string, string>): Promise<void> {
   if (!supabase) return;
-  const { data } = await supabase.from('profiles').select('id').eq('id', userId).single();
-  if (!data) {
-    await supabase.from('profiles').insert({
-      id: userId,
-      display_name: meta?.full_name ?? meta?.name ?? null,
-      avatar_url: meta?.avatar_url ?? null,
-    });
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (data) {
+    return;
+  }
+
+  const { error: insertError } = await supabase.from('profiles').insert({
+    id: userId,
+    display_name: meta?.full_name ?? meta?.name ?? null,
+    avatar_url: meta?.avatar_url ?? null,
+  });
+
+  if (insertError && insertError.code !== '23505') {
+    // Ignore duplicate key race; another request may have inserted profile.
+    throw insertError;
   }
 }
 
 export async function createProject(
   userId: string,
-  name = 'Untitled Project'
+  name = 'Untitled Project',
+  userMeta?: Record<string, string>
 ): Promise<Project> {
   if (!supabase) throw new Error('Supabase not configured');
   // Ensure profile exists (trigger may not have fired for pre-migration users)
-  await ensureProfile(userId);
-  const { data, error } = await supabase
+  await ensureProfile(userId, userMeta);
+  const projectId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const { error } = await supabase
     .from('projects')
-    .insert({ user_id: userId, name })
-    .select()
-    .single();
+    .insert({ id: projectId, user_id: userId, name });
   if (error) throw error;
-  return rowToProject(data);
+  return {
+    id: projectId,
+    name,
+    settings: { ...DEFAULT_PROJECT_SETTINGS },
+    created_at: now,
+    updated_at: now,
+  };
 }
 
 export async function updateProject(
@@ -77,9 +119,9 @@ function rowToProject(row: Record<string, unknown>): Project {
     id: row.id as string,
     name: row.name as string,
     settings: {
-      showGrid: (settings.showGrid as boolean) ?? true,
-      gridSizeIn: (settings.gridSizeIn as number) ?? 12,
-      snapToGrid: (settings.snapToGrid as boolean) ?? false,
+      showGrid: (settings.showGrid as boolean) ?? DEFAULT_PROJECT_SETTINGS.showGrid,
+      gridSizeIn: (settings.gridSizeIn as number) ?? DEFAULT_PROJECT_SETTINGS.gridSizeIn,
+      snapToGrid: (settings.snapToGrid as boolean) ?? DEFAULT_PROJECT_SETTINGS.snapToGrid,
     },
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
