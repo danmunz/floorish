@@ -29,7 +29,7 @@ RISK_PATTERNS=(
   'truncate[[:space:]]+table'
   'drop[[:space:]]+schema'
   'drop[[:space:]]+database'
-  'alter[[:space:]]+table.*drop[[:space:]]+column'
+  'alter[[:space:]]+table[^;]*drop[[:space:]]+column'
 )
 
 FAILED=0
@@ -42,8 +42,10 @@ while IFS= read -r file; do
     continue
   fi
 
+  normalized_sql="$(tr '\n' ' ' < "$file" | tr -s '[:space:]' ' ')"
+
   for pattern in "${RISK_PATTERNS[@]}"; do
-    if grep -Eiq "$pattern" "$file"; then
+    if printf '%s' "$normalized_sql" | grep -Eiq "$pattern"; then
       echo "::error file=$file::Potentially destructive SQL detected ($pattern). Add '$OVERRIDE_TOKEN' with justification or split into a manually reviewed migration."
       FAILED=1
       break
