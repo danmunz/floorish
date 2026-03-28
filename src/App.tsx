@@ -36,6 +36,7 @@ function AppInner() {
   const [projectCreateError, setProjectCreateError] = useState<string | null>(null);
   const canvasRef = useRef<CanvasHandle>(null);
   const creatingProjectRef = useRef(false);
+  // Timer-driven setup retries prevent transient backend failures from leaving setup stuck.
   const setupRetryAttemptRef = useRef(0);
   const setupRetryTimerRef = useRef<number | null>(null);
   const [setupRetryTick, setSetupRetryTick] = useState(0);
