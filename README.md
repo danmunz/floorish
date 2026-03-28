@@ -22,7 +22,7 @@ A browser-based floor plan studio for arranging furniture to scale. Drop in a fl
 ## Getting Started
 
 ```bash
-cp .env.example .env.local  # Add your Supabase credentials
+cp .env.example .env.local  # Add your Supabase credentials (and optional Buy Me a Coffee slug)
 npm install
 npm run dev
 ```
@@ -36,6 +36,10 @@ npm run dev
 5. Copy your project URL and anon key to `.env.local`
 
 The app works without Supabase credentials in **guest mode** (localStorage only).
+
+### Optional Buy Me a Coffee Button
+
+Set `VITE_BMC_SLUG` in `.env.local` to show the official Buy Me a Coffee button embed in the signed-in user menu.
 
 ## Tech Stack
 
