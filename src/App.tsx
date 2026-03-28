@@ -15,8 +15,8 @@ import { SharedView } from './components/SharedView';
 import { useCloudPersistence } from './hooks/useCloudPersistence';
 import { uploadFloorPlanImage } from './lib/storage';
 import { createProject, fetchProjects, updateProject } from './lib/api';
-import { hasCalibrationTransition, hasCalibratedFloorPlan } from './utils/calibrationTransitions';
-import { getNextNewProjectName } from './utils/projectNames';
+import { hasCalibratedFloorPlan } from './utils/calibrationTransitions';
+import { getNextNewProjectName, NEW_PROJECT_BASE_NAME } from './utils/projectNames';
 import './App.css';
 
 interface ActiveProject {
@@ -33,12 +33,13 @@ function AppInner() {
   const [projectNameDraft, setProjectNameDraft] = useState('');
   const [isRenamingProject, setIsRenamingProject] = useState(false);
   const [projectRenameError, setProjectRenameError] = useState<string | null>(null);
+  const [projectCreateError, setProjectCreateError] = useState<string | null>(null);
   const canvasRef = useRef<CanvasHandle>(null);
   const creatingProjectRef = useRef(false);
-  const previousFloorPlansRef = useRef(state.floorPlans);
 
   const projectId = project?.id ?? null;
   const hasWorkingDraft = state.floorPlans.length > 0 || state.furniture.length > 0;
+  const hasCalibratedDraft = hasCalibratedFloorPlan(state.floorPlans);
 
   // Cloud autosave for authenticated users
   const cloudSave = useCloudPersistence(projectId);
@@ -47,6 +48,7 @@ function AppInner() {
     if (!user || isGuest) {
       setProject(null);
       setProjectRenameError(null);
+      setProjectCreateError(null);
       setIsEditingProjectName(false);
     }
   }, [user, isGuest]);
@@ -79,37 +81,34 @@ function AppInner() {
     }
 
     creatingProjectRef.current = true;
+    let suggestedName = NEW_PROJECT_BASE_NAME;
+
     try {
-      const existingProjects = await fetchProjects();
-      const suggestedName = getNextNewProjectName(existingProjects.map((entry) => entry.name));
+      try {
+        const existingProjects = await fetchProjects();
+        suggestedName = getNextNewProjectName(existingProjects.map((entry) => entry.name));
+      } catch (err) {
+        console.warn('Project list fetch failed; using default project name:', err);
+      }
+
       const createdProject = await createProject(user.id, suggestedName);
       setProject({ id: createdProject.id, name: createdProject.name });
       setProjectRenameError(null);
+      setProjectCreateError(null);
     } catch (err) {
       console.error('Auto-create project failed:', err);
+      setProjectCreateError('Autosave setup failed. Make another edit to retry.');
     } finally {
       creatingProjectRef.current = false;
     }
   }, [user, isGuest, projectId]);
 
-  // Auto-create on first calibration only for authenticated users.
+  // Auto-create for authenticated drafts once calibration exists.
   useEffect(() => {
-    const previousFloorPlans = previousFloorPlansRef.current;
-    const currentFloorPlans = state.floorPlans;
-
-    if (user && !isGuest && !projectId) {
-      const justCalibrated = hasCalibrationTransition(previousFloorPlans, currentFloorPlans);
-      const hadCalibratedFloorPlan = hasCalibratedFloorPlan(previousFloorPlans);
-      const hasCalibratedFloorPlanNow = hasCalibratedFloorPlan(currentFloorPlans);
-      const loadedPreCalibratedDraft = !hadCalibratedFloorPlan && hasCalibratedFloorPlanNow;
-
-      if (justCalibrated || loadedPreCalibratedDraft) {
-        void createProjectFromCurrentWork();
-      }
+    if (user && !isGuest && !projectId && hasCalibratedDraft) {
+      void createProjectFromCurrentWork();
     }
-
-    previousFloorPlansRef.current = currentFloorPlans;
-  }, [state.floorPlans, user, isGuest, projectId, createProjectFromCurrentWork]);
+  }, [user, isGuest, projectId, hasCalibratedDraft, state.furniture.length, createProjectFromCurrentWork]);
 
   const commitProjectRename = useCallback(async () => {
     if (!project || isRenamingProject) return;
@@ -151,6 +150,8 @@ function AppInner() {
   const saveStatusLabel = useMemo(() => {
     if (!user || isGuest) return null;
     if (!projectId) {
+      if (projectCreateError) return projectCreateError;
+      if (hasCalibratedDraft) return 'Setting up autosave...';
       return hasWorkingDraft ? 'Autosave starts after first calibration' : 'Select or start a project';
     }
     if (cloudSave.status === 'saving') return 'Saving...';
@@ -159,7 +160,25 @@ function AppInner() {
       return `Saved ${cloudSave.lastSavedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
     }
     return 'Autosave on';
-  }, [user, isGuest, projectId, hasWorkingDraft, cloudSave.status, cloudSave.lastSavedAt]);
+  }, [
+    user,
+    isGuest,
+    projectId,
+    hasWorkingDraft,
+    hasCalibratedDraft,
+    projectCreateError,
+    cloudSave.status,
+    cloudSave.lastSavedAt,
+  ]);
+
+  const saveStatusTone = useMemo(() => {
+    if (!projectId) {
+      if (projectCreateError) return 'error';
+      if (hasCalibratedDraft) return 'saving';
+      return 'idle';
+    }
+    return cloudSave.status;
+  }, [projectId, projectCreateError, hasCalibratedDraft, cloudSave.status]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
@@ -288,7 +307,7 @@ function AppInner() {
             )}
 
             {saveStatusLabel && (
-              <span className={`project-save-status project-save-status-${cloudSave.status}`}>
+              <span className={`project-save-status project-save-status-${saveStatusTone}`}>
                 {saveStatusLabel}
               </span>
             )}
