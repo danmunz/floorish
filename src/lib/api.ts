@@ -13,6 +13,7 @@ export interface Project {
   };
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 const DEFAULT_PROJECT_SETTINGS = {
@@ -28,12 +29,18 @@ function isPolicyRecursionError(error: unknown): boolean {
     || /infinite recursion detected in policy/i.test(maybePostgrest.message ?? '');
 }
 
-export async function fetchProjects(): Promise<Project[]> {
+export async function fetchProjects(options?: { includeDeleted?: boolean }): Promise<Project[]> {
   if (!supabase) return [];
-  const { data, error } = await supabase
+  let query = supabase
     .from('projects')
     .select('*')
     .order('updated_at', { ascending: false });
+
+  if (!options?.includeDeleted) {
+    query = query.is('deleted_at', null);
+  }
+
+  const { data, error } = await query;
   if (error) {
     if (isPolicyRecursionError(error)) {
       console.warn('Projects query blocked by recursive RLS policy; returning empty list until DB policies are fixed.');
@@ -92,6 +99,7 @@ export async function createProject(
     settings: { ...DEFAULT_PROJECT_SETTINGS },
     created_at: now,
     updated_at: now,
+    deleted_at: null,
   };
 }
 
@@ -103,13 +111,27 @@ export async function updateProject(
   const { error } = await supabase
     .from('projects')
     .update(updates)
-    .eq('id', id);
+    .eq('id', id)
+    .is('deleted_at', null);
   if (error) throw error;
 }
 
 export async function deleteProject(id: string): Promise<void> {
   if (!supabase) return;
-  const { error } = await supabase.from('projects').delete().eq('id', id);
+  const { error } = await supabase
+    .from('projects')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('deleted_at', null);
+  if (error) throw error;
+}
+
+export async function restoreProject(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from('projects')
+    .update({ deleted_at: null })
+    .eq('id', id);
   if (error) throw error;
 }
 
@@ -125,6 +147,7 @@ function rowToProject(row: Record<string, unknown>): Project {
     },
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
+    deleted_at: (row.deleted_at as string) ?? null,
   };
 }
 
@@ -229,6 +252,8 @@ export async function fetchProjectByShareToken(token: string) {
     .single();
   if (error || !data) return null;
   if (data.expires_at && new Date(data.expires_at) < new Date()) return null;
+  const sharedProject = data.projects as { deleted_at?: string | null } | null;
+  if (sharedProject?.deleted_at) return null;
   return data;
 }
 

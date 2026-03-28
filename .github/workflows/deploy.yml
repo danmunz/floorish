@@ -7,7 +7,24 @@ on:
     branches: [main]
 
 jobs:
+  migration_safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check migration safety
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+          fi
+          HEAD_SHA="${{ github.sha }}"
+          bash scripts/check-migration-safety.sh "$BASE_SHA" "$HEAD_SHA"
+
   test:
+    needs: migration_safety
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
