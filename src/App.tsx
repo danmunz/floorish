@@ -36,6 +36,9 @@ function AppInner() {
   const [projectCreateError, setProjectCreateError] = useState<string | null>(null);
   const canvasRef = useRef<CanvasHandle>(null);
   const creatingProjectRef = useRef(false);
+  const setupRetryAttemptRef = useRef(0);
+  const setupRetryTimerRef = useRef<number | null>(null);
+  const [setupRetryTick, setSetupRetryTick] = useState(0);
 
   const projectId = project?.id ?? null;
   const hasWorkingDraft = state.floorPlans.length > 0 || state.furniture.length > 0;
@@ -103,9 +106,25 @@ function AppInner() {
       setProject({ id: createdProject.id, name: createdProject.name });
       setProjectRenameError(null);
       setProjectCreateError(null);
+      setupRetryAttemptRef.current = 0;
+      if (setupRetryTimerRef.current !== null) {
+        window.clearTimeout(setupRetryTimerRef.current);
+        setupRetryTimerRef.current = null;
+      }
     } catch (err) {
       console.error('Auto-create project failed:', err);
-      setProjectCreateError('Autosave setup failed. Make another edit to retry.');
+      setupRetryAttemptRef.current += 1;
+
+      const delayMs = Math.min(1000 * 2 ** (setupRetryAttemptRef.current - 1), 15000);
+      if (setupRetryTimerRef.current !== null) {
+        window.clearTimeout(setupRetryTimerRef.current);
+      }
+      setupRetryTimerRef.current = window.setTimeout(() => {
+        setupRetryTimerRef.current = null;
+        setSetupRetryTick((tick) => tick + 1);
+      }, delayMs);
+
+      setProjectCreateError('Autosave setup failed. Retrying...');
     } finally {
       creatingProjectRef.current = false;
     }
@@ -116,7 +135,22 @@ function AppInner() {
     if (user && !isGuest && !projectId && calibratedFloorPlanKey.length > 0) {
       void createProjectFromCurrentWork();
     }
-  }, [user, isGuest, projectId, calibratedFloorPlanKey, state.furniture.length, createProjectFromCurrentWork]);
+  }, [
+    user,
+    isGuest,
+    projectId,
+    calibratedFloorPlanKey,
+    state.furniture.length,
+    setupRetryTick,
+    createProjectFromCurrentWork,
+  ]);
+
+  useEffect(() => () => {
+    if (setupRetryTimerRef.current !== null) {
+      window.clearTimeout(setupRetryTimerRef.current);
+      setupRetryTimerRef.current = null;
+    }
+  }, []);
 
   const commitProjectRename = useCallback(async () => {
     if (!project || isRenamingProject) return;
