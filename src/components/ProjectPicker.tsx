@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import {
   fetchProjects,
   deleteProject,
+  restoreProject,
   updateProject,
   fetchFloorPlans,
   fetchFurniture,
@@ -27,11 +28,13 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
   const [loading, setLoading] = useState(true);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const activeProjects = projects.filter((project) => project.deleted_at === null);
+  const archivedProjects = projects.filter((project) => project.deleted_at !== null);
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchProjects();
+      const data = await fetchProjects({ includeDeleted: true });
       setProjects(data);
     } catch (err) {
       console.error('Failed to fetch projects:', err);
@@ -70,9 +73,23 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
   const handleDelete = async (id: string) => {
     try {
       await deleteProject(id);
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+      const deletedAt = new Date().toISOString();
+      setProjects((prev) => prev.map((project) => (
+        project.id === id ? { ...project, deleted_at: deletedAt } : project
+      )));
     } catch (err) {
       console.error('Failed to delete project:', err);
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await restoreProject(id);
+      setProjects((prev) => prev.map((project) => (
+        project.id === id ? { ...project, deleted_at: null } : project
+      )));
+    } catch (err) {
+      console.error('Failed to restore project:', err);
     }
   };
 
@@ -94,6 +111,9 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
   };
 
   const handleOpen = async (project: Project) => {
+    if (project.deleted_at) {
+      return;
+    }
     try {
       // Load floor plans
       const fpRows = await fetchFloorPlans(project.id);
@@ -157,7 +177,7 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
         </label>
       </div>
 
-      {projects.length === 0 ? (
+      {activeProjects.length === 0 ? (
         <div className="project-picker-empty">
           <p>Drop or browse floor plan images above to start a new project,<br />or try our sample to explore the app.</p>
           <button className="sample-card" onClick={handleLoadSample}>
@@ -170,7 +190,7 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
         </div>
       ) : (
         <div className="project-list">
-          {projects.map((p) => (
+          {activeProjects.map((p) => (
             <div key={p.id} className="project-card" onClick={() => handleOpen(p)}>
               <div className="project-card-info">
                 {renamingId === p.id ? (
@@ -219,6 +239,33 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
             </div>
           ))}
         </div>
+      )}
+
+      {archivedProjects.length > 0 && (
+        <section className="project-archive-section" aria-label="Archived projects">
+          <h3 className="project-archive-title">Archived Projects</h3>
+          <div className="project-list">
+            {archivedProjects.map((p) => (
+              <div key={p.id} className="project-card project-card-archived">
+                <div className="project-card-info">
+                  <h3 className="project-card-name">{p.name}</h3>
+                  <span className="project-card-date">
+                    Archived {new Date(p.deleted_at as string).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="project-card-actions">
+                  <button
+                    className="btn-icon"
+                    title="Restore"
+                    onClick={() => handleRestore(p.id)}
+                  >
+                    ↩️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

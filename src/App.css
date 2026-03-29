@@ -1487,6 +1487,22 @@ html, body, #root {
   gap: 8px;
 }
 
+.project-archive-section {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 24px;
+}
+
+.project-archive-title {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
 .project-card {
   display: flex;
   align-items: center;
@@ -1504,6 +1520,19 @@ html, body, #root {
   border-left: 3px solid var(--olive);
   box-shadow: var(--shadow-elevated);
   transform: translateY(-2px);
+}
+
+.project-card-archived {
+  cursor: default;
+  opacity: 0.82;
+  background: var(--bg-surface);
+}
+
+.project-card-archived:hover {
+  border-color: var(--border);
+  border-left: 1px solid var(--border);
+  box-shadow: none;
+  transform: none;
 }
 
 .project-card-info {

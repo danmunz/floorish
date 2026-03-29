@@ -35,6 +35,8 @@ npm run dev
 4. Create a Storage bucket named `floor-plans` (private)
 5. Copy your project URL and anon key to `.env.local`
 
+When adding new schema changes, commit SQL files under `supabase/migrations` and apply them with `supabase db push` in each environment.
+
 The app works without Supabase credentials in **guest mode** (localStorage only).
 
 ### Optional Buy Me a Coffee Button
@@ -48,6 +50,49 @@ React · TypeScript · Vite · Konva / react-konva · Tesseract.js · Supabase (
 ## Deployment
 
 The app is deployed to **Vercel**. Every push to `main` triggers a build and deploy. The CI pipeline runs tests first — a failing test suite blocks deployment.
+
+## Data Safety Guardrails
+
+### Environment Isolation
+
+Use separate Supabase projects for `dev`, `preview`, and `production`.
+
+- Vercel preview deployments must use preview Supabase credentials.
+- Production deployment must use production credentials only.
+- Never run experimental migrations against production first.
+
+### Migration Safety Gate
+
+CI runs `scripts/check-migration-safety.sh` for every PR and push to `main`.
+
+- It blocks migrations that contain high-risk statements like `DROP TABLE`, `TRUNCATE TABLE`, or `ALTER TABLE ... DROP COLUMN`.
+- If a destructive migration is truly intentional, add `safety:allow-destructive` with a clear inline justification in that migration and require manual review.
+
+### Project Soft Delete
+
+Project deletion is soft-delete based (`projects.deleted_at`) so users can restore archived projects from the Project Picker.
+
+- Delete moves a project to **Archived Projects**.
+- Restore clears `deleted_at` and returns it to active projects.
+- This prevents accidental permanent loss from UI delete actions.
+
+### Supabase Backup & Restore Runbook
+
+Supabase backup retention and PITR availability depend on your plan. Verify settings directly in the dashboard for each environment.
+
+1. Open **Supabase Dashboard → Database → Backups**.
+2. Confirm automatic backups are enabled and note retention period.
+3. Enable Point-in-Time Recovery (PITR) if your plan supports it.
+4. Before any risky migration, create an on-demand backup/snapshot.
+5. Keep SQL migrations in git so schema state is reproducible.
+
+Restore drill checklist (run monthly in a non-prod project):
+
+1. Restore a backup into a staging project.
+2. Log in to Floorish staging and open several real projects.
+3. Verify floor plans, furniture, and calibration values load correctly.
+4. Verify recent archived projects can be restored.
+5. Record restore duration and any issues in your ops notes.
 
 ## Keyboard Shortcuts
 
