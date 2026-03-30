@@ -155,6 +155,76 @@ export interface Database {
           expires_at?: string | null;
         };
       };
+      room_photos: {
+        Row: {
+          id: string;
+          project_id: string;
+          floor_plan_id: string | null;
+          image_path: string;
+          name: string;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          floor_plan_id?: string | null;
+          image_path: string;
+          name?: string;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          floor_plan_id?: string | null;
+          image_path?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+      };
+      style_generations: {
+        Row: {
+          id: string;
+          project_id: string;
+          source_photo_id: string | null;
+          style_preset: string | null;
+          prompt: string;
+          negative_prompt: string | null;
+          denoise_strength: number;
+          result_image_path: string | null;
+          status: string;
+          error_message: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          source_photo_id?: string | null;
+          style_preset?: string | null;
+          prompt: string;
+          negative_prompt?: string | null;
+          denoise_strength?: number;
+          result_image_path?: string | null;
+          status?: string;
+          error_message?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          source_photo_id?: string | null;
+          style_preset?: string | null;
+          prompt?: string;
+          negative_prompt?: string | null;
+          denoise_strength?: number;
+          result_image_path?: string | null;
+          status?: string;
+          error_message?: string | null;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

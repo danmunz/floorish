@@ -42,7 +42,7 @@ export interface PlacedFurniture {
   locked: boolean;
 }
 
-export type ToolMode = 'select' | 'calibrate' | 'measure' | 'draw-polygon' | 'place' | 'export-select';
+export type ToolMode = 'select' | 'calibrate' | 'measure' | 'draw-polygon' | 'place' | 'export-select' | 'style';
 
 export interface ExportSelection {
   start: Point | null;

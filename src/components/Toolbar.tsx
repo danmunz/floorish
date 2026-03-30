@@ -151,6 +151,14 @@ export function Toolbar({ projectId, canvasRef }: { projectId?: string | null; c
           <span className="tool-icon">✏️</span>
           <span className="tool-label">Draw</span>
         </button>
+        <button
+          className={`tool-btn ${state.toolMode === 'style' ? 'active' : ''}`}
+          onClick={() => setMode('style')}
+          title="Style Visualizer (R)"
+        >
+          <span className="tool-icon">🎨</span>
+          <span className="tool-label">Style</span>
+        </button>
       </div>
 
       <div className="toolbar-separator" />
