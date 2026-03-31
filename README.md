@@ -18,7 +18,8 @@ A browser-based floor plan studio for arranging furniture to scale. Drop in a fl
 - **Measurement tool** — Measure distances between any two points in calibrated feet/inches
 - **Share projects** — Generate read-only share links for collaborators and clients
 - **Undo/redo** — Full history with `⌘Z` / `⌘⇧Z`
-- **AI Style Visualizer** — Upload room photos and re-render them in different interior design styles (Japandi, Mid-Century Modern, Industrial, Coastal, and more) powered by Replicate's ControlNet models. BYOK: bring your own Replicate API key.
+- **Room regions** — Draw polygon outlines on the floor plan to define rooms; assign uploaded photos to specific rooms for organized style visualization
+- **AI Style Visualizer** — Upload room photos, organize them by room region, and re-render them in different interior design styles (Japandi, Mid-Century Modern, Industrial, Coastal, and more) powered by Replicate's ControlNet models. BYOK: bring your own Replicate API key.
 
 ## Getting Started
 
@@ -31,7 +32,7 @@ npm run dev
 ### Supabase Setup
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Run the migration: `supabase db push` (or apply `supabase/migrations/20260324000000_initial_schema.sql` via the SQL editor)
+2. Run all migrations: `supabase db push` (or apply each file under `supabase/migrations/` via the SQL editor — this includes the initial schema and the `20260331000000_rooms.sql` rooms migration)
 3. Enable Google OAuth in Authentication → Providers → Google
 4. Create Storage buckets: `floor-plans` (private), `room-photos` (private), `style-results` (private)
 5. Copy your project URL and anon key to `.env.local`

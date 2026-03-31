@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { AppProvider, useAppState } from '../hooks/useAppState';
 import type { ReactNode } from 'react';
-import type { FloorPlan, PlacedFurniture } from '../types';
+import type { FloorPlan, PlacedFurniture, Room } from '../types';
 
 function wrapper({ children }: { children: ReactNode }) {
   return <AppProvider>{children}</AppProvider>;
@@ -439,6 +439,130 @@ describe('undo/redo', () => {
     // Now dispatch a new action – future should be cleared
     act(() => result.current.dispatch({ type: 'ADD_FURNITURE', payload: makeFurniture({ id: 'c' }) }));
     expect(result.current.canRedo).toBe(false);
+  });
+});
+
+const makeRoom = (overrides?: Partial<Room>): Room => ({
+  id: 'room-1',
+  name: 'Living Room',
+  color: '#E8D4B8',
+  vertices: [0, 0, 100, 0, 100, 100, 0, 100],
+  x: 50,
+  y: 50,
+  widthPx: 100,
+  heightPx: 100,
+  floorPlanId: 'fp-1',
+  ...overrides,
+});
+
+describe('room actions', () => {
+  it('ADD_ROOM adds and selects room', () => {
+    const { result } = setup();
+    const room = makeRoom();
+
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: room }));
+
+    expect(result.current.state.rooms).toHaveLength(1);
+    expect(result.current.state.rooms[0]).toEqual(room);
+    expect(result.current.state.selectedRoomId).toBe('room-1');
+  });
+
+  it('UPDATE_ROOM updates an existing room by id', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom() }));
+    act(() => result.current.dispatch({
+      type: 'UPDATE_ROOM',
+      payload: { id: 'room-1', updates: { name: 'Kitchen', color: '#FF0000' } },
+    }));
+
+    const updated = result.current.state.rooms[0];
+    expect(updated.name).toBe('Kitchen');
+    expect(updated.color).toBe('#FF0000');
+    expect(updated.x).toBe(50); // unchanged
+  });
+
+  it('REMOVE_ROOM removes room and clears selectedRoomId if selected', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom() }));
+    expect(result.current.state.selectedRoomId).toBe('room-1');
+
+    act(() => result.current.dispatch({ type: 'REMOVE_ROOM', payload: 'room-1' }));
+
+    expect(result.current.state.rooms).toHaveLength(0);
+    expect(result.current.state.selectedRoomId).toBeNull();
+  });
+
+  it('REMOVE_ROOM preserves selectedRoomId when removing a different room', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom({ id: 'room-1' }) }));
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom({ id: 'room-2' }) }));
+    // room-2 is now selected (last added)
+    act(() => result.current.dispatch({ type: 'REMOVE_ROOM', payload: 'room-1' }));
+
+    expect(result.current.state.rooms).toHaveLength(1);
+    expect(result.current.state.selectedRoomId).toBe('room-2');
+  });
+
+  it('SELECT_ROOM sets selectedRoomId', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom() }));
+    act(() => result.current.dispatch({ type: 'SELECT_ROOM', payload: null }));
+
+    expect(result.current.state.selectedRoomId).toBeNull();
+
+    act(() => result.current.dispatch({ type: 'SELECT_ROOM', payload: 'room-1' }));
+
+    expect(result.current.state.selectedRoomId).toBe('room-1');
+  });
+
+  it('SELECT_ROOM is ephemeral and does not affect undo history', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'SELECT_ROOM', payload: 'room-1' }));
+
+    expect(result.current.canUndo).toBe(false);
+  });
+
+  it('FINISH_DRAW_ROOM sets toolMode back to style', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'SET_TOOL_MODE', payload: 'draw-room' }));
+    act(() => result.current.dispatch({ type: 'FINISH_DRAW_ROOM' }));
+
+    expect(result.current.state.toolMode).toBe('style');
+    expect(result.current.state.drawPolygon.vertices).toEqual([]);
+    expect(result.current.state.drawPolygon.isDrawing).toBe(false);
+  });
+});
+
+describe('room cascade delete', () => {
+  it('REMOVE_FLOOR_PLAN removes rooms linked to that floorPlanId', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_FLOOR_PLAN', payload: makeFloorPlan({ id: 'fp-1' }) }));
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom({ id: 'room-1', floorPlanId: 'fp-1' }) }));
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom({ id: 'room-2', floorPlanId: 'fp-1' }) }));
+    act(() => result.current.dispatch({ type: 'REMOVE_FLOOR_PLAN', payload: 'fp-1' }));
+
+    expect(result.current.state.rooms).toHaveLength(0);
+    expect(result.current.state.selectedRoomId).toBeNull();
+  });
+
+  it('REMOVE_FLOOR_PLAN preserves rooms on other floor plans', () => {
+    const { result } = setup();
+
+    act(() => result.current.dispatch({ type: 'ADD_FLOOR_PLAN', payload: makeFloorPlan({ id: 'fp-1' }) }));
+    act(() => result.current.dispatch({ type: 'ADD_FLOOR_PLAN', payload: makeFloorPlan({ id: 'fp-2' }) }));
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom({ id: 'room-1', floorPlanId: 'fp-1' }) }));
+    act(() => result.current.dispatch({ type: 'ADD_ROOM', payload: makeRoom({ id: 'room-2', floorPlanId: 'fp-2' }) }));
+    act(() => result.current.dispatch({ type: 'REMOVE_FLOOR_PLAN', payload: 'fp-1' }));
+
+    expect(result.current.state.rooms).toHaveLength(1);
+    expect(result.current.state.rooms[0].id).toBe('room-2');
   });
 });
 
