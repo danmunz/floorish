@@ -15,6 +15,8 @@ const INITIAL_STATE: AppState = {
   showGrid: true,
   gridSizeIn: 12,
   snapToGrid: false,
+  rooms: [],
+  selectedRoomId: null,
   placingPreset: null,
   stagePos: { x: 0, y: 0 },
   stageScale: 1,
@@ -50,6 +52,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
           ? (state.floorPlans.find(fp => fp.id !== action.payload)?.id ?? null)
           : state.activeFloorPlanId,
         furniture: state.furniture.filter(f => f.floorPlanId !== action.payload),
+        rooms: state.rooms.filter(r => r.floorPlanId !== action.payload),
+        selectedRoomId: null,
       };
     case 'SET_ACTIVE_FLOOR_PLAN':
       return {
@@ -84,7 +88,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         measure: action.payload === 'measure'
           ? { points: [], distanceFt: null }
           : state.measure,
-        drawPolygon: action.payload === 'draw-polygon'
+        drawPolygon: (action.payload === 'draw-polygon' || action.payload === 'draw-room')
           ? { vertices: [], isDrawing: true }
           : state.drawPolygon,
         placingPreset: action.payload !== 'place' ? null : state.placingPreset,
@@ -193,6 +197,33 @@ function appReducer(state: AppState, action: AppAction): AppState {
         selectedFurnitureId: dup.id,
       };
     }
+    case 'ADD_ROOM':
+      return {
+        ...state,
+        rooms: [...state.rooms, action.payload],
+        selectedRoomId: action.payload.id,
+      };
+    case 'UPDATE_ROOM':
+      return {
+        ...state,
+        rooms: state.rooms.map(r =>
+          r.id === action.payload.id ? { ...r, ...action.payload.updates } : r
+        ),
+      };
+    case 'REMOVE_ROOM':
+      return {
+        ...state,
+        rooms: state.rooms.filter(r => r.id !== action.payload),
+        selectedRoomId: state.selectedRoomId === action.payload ? null : state.selectedRoomId,
+      };
+    case 'SELECT_ROOM':
+      return { ...state, selectedRoomId: action.payload };
+    case 'FINISH_DRAW_ROOM':
+      return {
+        ...state,
+        drawPolygon: { vertices: [], isDrawing: false },
+        toolMode: 'style',
+      };
     default:
       return state;
   }
@@ -216,7 +247,7 @@ type UndoAction =
 const EPHEMERAL_ACTIONS = new Set([
   'SET_STAGE_POS', 'SET_STAGE_SCALE', 'SET_OCR_PROGRESS', 'SET_OCR_RUNNING',
   'SET_OCR_DIMENSIONS', 'ADD_CALIBRATION_POINT', 'ADD_MEASURE_POINT', 'ADD_DRAW_VERTEX',
-  'SELECT_FURNITURE', 'SET_TOOL_MODE', 'SET_PLACING_PRESET', 'RESET_MEASURE',
+  'SELECT_FURNITURE', 'SELECT_ROOM', 'SET_TOOL_MODE', 'SET_PLACING_PRESET', 'RESET_MEASURE',
   'RESET_CALIBRATION_POINTS', 'UPDATE_FLOOR_PLAN', 'SET_EXPORT_SELECTION', 'CLEAR_EXPORT_SELECTION',
 ]);
 

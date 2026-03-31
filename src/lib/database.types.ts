@@ -155,11 +155,53 @@ export interface Database {
           expires_at?: string | null;
         };
       };
+      rooms: {
+        Row: {
+          id: string;
+          floor_plan_id: string;
+          name: string;
+          color: string;
+          vertices: Json;
+          x: number;
+          y: number;
+          width_px: number;
+          height_px: number;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          floor_plan_id: string;
+          name: string;
+          color?: string;
+          vertices: Json;
+          x: number;
+          y: number;
+          width_px: number;
+          height_px: number;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          color?: string;
+          vertices?: Json;
+          x?: number;
+          y?: number;
+          width_px?: number;
+          height_px?: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+      };
       room_photos: {
         Row: {
           id: string;
           project_id: string;
           floor_plan_id: string | null;
+          room_id: string | null;
           image_path: string;
           name: string;
           sort_order: number;
@@ -170,6 +212,7 @@ export interface Database {
           id?: string;
           project_id: string;
           floor_plan_id?: string | null;
+          room_id?: string | null;
           image_path: string;
           name?: string;
           sort_order?: number;
@@ -178,6 +221,7 @@ export interface Database {
         };
         Update: {
           floor_plan_id?: string | null;
+          room_id?: string | null;
           image_path?: string;
           name?: string;
           sort_order?: number;
@@ -189,6 +233,7 @@ export interface Database {
           id: string;
           project_id: string;
           source_photo_id: string | null;
+          room_id: string | null;
           style_preset: string | null;
           prompt: string;
           negative_prompt: string | null;
@@ -203,6 +248,7 @@ export interface Database {
           id?: string;
           project_id: string;
           source_photo_id?: string | null;
+          room_id?: string | null;
           style_preset?: string | null;
           prompt: string;
           negative_prompt?: string | null;
@@ -215,6 +261,7 @@ export interface Database {
         };
         Update: {
           source_photo_id?: string | null;
+          room_id?: string | null;
           style_preset?: string | null;
           prompt?: string;
           negative_prompt?: string | null;

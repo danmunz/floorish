@@ -8,9 +8,11 @@ interface RoomPhotoPanelProps {
   floorPlanId: string | null;
   selectedPhotoUrl: string | null;
   onSelectPhoto: (url: string | null, photoId: string | null) => void;
+  roomId?: string | null;
+  rooms?: { id: string; name: string; color: string }[];
 }
 
-export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSelectPhoto }: RoomPhotoPanelProps) {
+export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSelectPhoto, roomId, rooms }: RoomPhotoPanelProps) {
   const { user, isGuest } = useAuth();
   const [photos, setPhotos] = useState<(RoomPhoto & { url?: string })[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,9 +29,11 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
       try {
         const records = await fetchRoomPhotos(projectId);
         if (cancelled) return;
+        // Filter by room if specified
+        const filtered = roomId ? records.filter(r => r.room_id === roomId) : records;
         // Resolve signed URLs
         const withUrls = await Promise.all(
-          records.map(async (r) => {
+          filtered.map(async (r) => {
             const url = await getRoomPhotoUrl(r.image_path);
             return { ...r, url: url ?? undefined };
           })
@@ -42,7 +46,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
       }
     })();
     return () => { cancelled = true; };
-  }, [projectId]);
+  }, [projectId, roomId]);
 
   const handleUpload = useCallback(async (files: FileList) => {
     if (!user || isGuest || !projectId) return;
@@ -59,6 +63,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
         const record = await insertRoomPhoto({
           project_id: projectId,
           floor_plan_id: floorPlanId,
+          room_id: roomId ?? null,
           image_path: imagePath,
           name,
           sort_order: photos.length + i,
@@ -71,7 +76,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
     } finally {
       setUploading(false);
     }
-  }, [user, isGuest, projectId, floorPlanId, photos.length]);
+  }, [user, isGuest, projectId, floorPlanId, roomId, photos.length]);
 
   const handleDelete = useCallback(async (photo: RoomPhoto & { url?: string }) => {
     try {
@@ -148,6 +153,14 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
                 <img src={photo.url} alt={photo.name} loading="lazy" />
               )}
               <span className="room-photo-name">{photo.name}</span>
+              {rooms && photo.room_id && (() => {
+                const room = rooms.find(r => r.id === photo.room_id);
+                return room ? (
+                  <span className="room-photo-badge" style={{ backgroundColor: room.color }}>
+                    {room.name}
+                  </span>
+                ) : null;
+              })()}
               {user && !isGuest && (
                 <button
                   className="room-photo-delete"

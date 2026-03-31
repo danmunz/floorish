@@ -3,6 +3,8 @@ import { STYLE_PRESETS } from '../data/stylePresets';
 import { generateRestyle, getReplicateApiKey, resizeImageToBase64 } from '../lib/styleEngine';
 import { ApiKeySettings } from './ApiKeySettings';
 import { RoomPhotoPanel } from './RoomPhotoPanel';
+import { useAppState } from '../hooks/useAppState';
+import { RoomListPanel } from './RoomListPanel';
 
 interface StylePanelProps {
   projectId: string | null;
@@ -12,6 +14,8 @@ interface StylePanelProps {
 type GenerationStatus = 'idle' | 'generating' | 'done' | 'error';
 
 export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
+  const { state } = useAppState();
+  const currentRooms = state.rooms.filter(r => r.floorPlanId === floorPlanId);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string>('japandi');
   const [customModifiers, setCustomModifiers] = useState('');
@@ -81,12 +85,17 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
       {/* API Key Section */}
       {!hasApiKey && <ApiKeySettings />}
 
+      {/* Rooms */}
+      <RoomListPanel floorPlanId={floorPlanId} />
+
       {/* Room Photos */}
       <RoomPhotoPanel
         projectId={projectId}
         floorPlanId={floorPlanId}
         selectedPhotoUrl={selectedPhotoUrl}
         onSelectPhoto={handleSelectPhoto}
+        roomId={state.selectedRoomId}
+        rooms={currentRooms}
       />
 
       {/* Style Presets */}

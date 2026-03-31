@@ -8,6 +8,7 @@ export interface RoomPhoto {
   id: string;
   project_id: string;
   floor_plan_id: string | null;
+  room_id: string | null;
   image_path: string;
   name: string;
   sort_order: number;
@@ -28,6 +29,7 @@ export async function fetchRoomPhotos(projectId: string): Promise<RoomPhoto[]> {
 export async function insertRoomPhoto(photo: {
   project_id: string;
   floor_plan_id?: string | null;
+  room_id?: string | null;
   image_path: string;
   name: string;
   sort_order?: number;

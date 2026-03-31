@@ -2204,3 +2204,151 @@ html, body, #root {
 .style-settings-summary:hover {
   color: var(--text);
 }
+
+/* ── Room Regions ── */
+
+.room-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.room-list-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--forest);
+  margin: 0;
+}
+
+.room-add-btn {
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-raised);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  transition: all var(--transition-fast);
+}
+
+.room-add-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--olive);
+  color: var(--olive);
+}
+
+.room-list-empty {
+  text-align: center;
+  padding: 12px 8px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.room-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.room-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.8rem;
+}
+
+.room-list-item:hover {
+  background: var(--bg-hover);
+}
+
+.room-list-item.selected {
+  border-color: var(--accent);
+  background: rgba(233, 196, 106, 0.08);
+}
+
+.room-list-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.room-list-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.room-list-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 0 2px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.room-list-item:hover .room-list-delete {
+  opacity: 1;
+}
+
+.room-list-delete:hover {
+  color: var(--danger);
+}
+
+.room-drawing-hint {
+  padding: 10px 12px;
+  background: rgba(122, 139, 82, 0.08);
+  border: 1px solid rgba(122, 139, 82, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--olive);
+  text-align: center;
+}
+
+.room-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.room-selector-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.room-selector-select {
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  background: var(--bg-raised);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.room-selector-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
