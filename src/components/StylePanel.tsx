@@ -13,7 +13,6 @@ type GenerationStatus = 'idle' | 'generating' | 'done' | 'error';
 
 export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
-  const [_selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string>('japandi');
   const [customModifiers, setCustomModifiers] = useState('');
   const [denoiseStrength, setDenoiseStrength] = useState(0.65);
@@ -25,9 +24,8 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
 
   const hasApiKey = !!getReplicateApiKey();
 
-  const handleSelectPhoto = useCallback((url: string | null, photoId: string | null) => {
+  const handleSelectPhoto = useCallback((url: string | null, _photoId: string | null) => {
     setSelectedPhotoUrl(url);
-    setSelectedPhotoId(photoId);
     setResultImageUrl(null);
     setStatus('idle');
     setError(null);

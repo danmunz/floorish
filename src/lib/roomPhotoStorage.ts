@@ -39,7 +39,10 @@ export async function getRoomPhotoUrl(path: string): Promise<string | null> {
 export async function deleteRoomPhoto(path: string): Promise<void> {
   if (!supabase || !path) return;
   const { error } = await supabase.storage.from(ROOM_PHOTOS_BUCKET).remove([path]);
-  if (error) console.error('Failed to delete room photo:', error);
+  if (error) {
+    console.error('Failed to delete room photo:', error);
+    throw error;
+  }
 }
 
 export async function uploadStyleResult(

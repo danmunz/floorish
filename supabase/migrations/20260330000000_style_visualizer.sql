@@ -32,7 +32,9 @@ create policy "Shared room photos are readable"
   using (
     project_id in (
       select s.project_id from public.shares s
+      join public.projects p on s.project_id = p.id
       where (s.expires_at is null or s.expires_at > now())
+        and p.deleted_at is null
     )
   );
 
@@ -78,7 +80,9 @@ create policy "Shared style generations are readable"
   using (
     project_id in (
       select s.project_id from public.shares s
+      join public.projects p on s.project_id = p.id
       where (s.expires_at is null or s.expires_at > now())
+        and p.deleted_at is null
     )
   );
 

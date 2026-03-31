@@ -18,7 +18,16 @@ interface RestyleRequestBody {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin as string | undefined;
+  const allowedOriginsEnv = process.env.ALLOWED_ORIGINS;
+  const allowedOrigins = allowedOriginsEnv
+    ? allowedOriginsEnv.split(',').map((o) => o.trim()).filter(Boolean)
+    : ['https://floorish.vercel.app'];
+
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Replicate-Key');
 
@@ -61,8 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Create a prediction on Replicate
-    const [modelOwner, modelNameVersion] = MODEL_VERSION.split('/');
-    const [modelName, version] = modelNameVersion.split(':');
+    const version = MODEL_VERSION.split(':')[1];
 
     const createResp = await fetch(`${REPLICATE_API}/predictions`, {
       method: 'POST',

@@ -50,6 +50,8 @@ export async function deleteRoomPhotoRecord(id: string): Promise<void> {
 
 // ── Style Generations ──
 
+export type StyleGenerationStatus = 'pending' | 'completed' | 'failed';
+
 export interface StyleGeneration {
   id: string;
   project_id: string;
@@ -59,7 +61,7 @@ export interface StyleGeneration {
   negative_prompt: string | null;
   denoise_strength: number;
   result_image_path: string | null;
-  status: 'pending' | 'completed' | 'failed';
+  status: StyleGenerationStatus;
   error_message: string | null;
   created_at: string;
 }
@@ -83,7 +85,7 @@ export async function insertStyleGeneration(gen: {
   negative_prompt?: string | null;
   denoise_strength: number;
   result_image_path?: string | null;
-  status: string;
+  status: StyleGenerationStatus;
   error_message?: string | null;
 }): Promise<StyleGeneration> {
   if (!supabase) throw new Error('Supabase not configured');
@@ -100,7 +102,7 @@ export async function updateStyleGeneration(
   id: string,
   updates: Partial<{
     result_image_path: string | null;
-    status: string;
+    status: StyleGenerationStatus;
     error_message: string | null;
   }>
 ): Promise<void> {

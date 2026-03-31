@@ -49,7 +49,9 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
 
     setUploading(true);
     try {
-      for (const file of Array.from(files)) {
+      const fileArray = Array.from(files);
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
         if (!file.type.startsWith('image/')) continue;
 
         const imagePath = await uploadRoomPhoto(file, user.id);
@@ -59,7 +61,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
           floor_plan_id: floorPlanId,
           image_path: imagePath,
           name,
-          sort_order: photos.length,
+          sort_order: photos.length + i,
         });
         const url = await getRoomPhotoUrl(imagePath);
         setPhotos(prev => [...prev, { ...record, url: url ?? undefined }]);
