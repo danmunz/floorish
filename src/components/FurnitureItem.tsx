@@ -8,11 +8,12 @@ import { snapAngle, calculateLabelFontSize } from '../utils/geometry';
 interface Props {
   item: PlacedFurniture;
   isSelected: boolean;
+  isJustPlaced: boolean;
   snapPos: (x: number, y: number) => { x: number; y: number };
   stageScale: number;
 }
 
-export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) {
+export function FurnitureItem({ item, isSelected, isJustPlaced, snapPos, stageScale }: Props) {
   const { state, dispatch } = useAppState();
   const groupRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -23,6 +24,31 @@ export function FurnitureItem({ item, isSelected, snapPos, stageScale }: Props) 
       trRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected, item.widthPx, item.heightPx, item.rotation]);
+
+  useEffect(() => {
+    if (!isJustPlaced || !groupRef.current) return;
+
+    const node = groupRef.current;
+    node.scale({ x: 0.92, y: 0.92 });
+    node.opacity(0.65);
+
+    const tween = new Konva.Tween({
+      node,
+      duration: 0.22,
+      easing: Konva.Easings.EaseOut,
+      scaleX: 1,
+      scaleY: 1,
+      opacity: 1,
+    });
+
+    tween.play();
+
+    return () => {
+      tween.destroy();
+      node.scale({ x: 1, y: 1 });
+      node.opacity(1);
+    };
+  }, [isJustPlaced]);
 
   const handleDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {

@@ -233,6 +233,9 @@ function AppInner() {
       if (meta && e.key === 'z' && e.shiftKey) { e.preventDefault(); redo(); return; }
       if (meta && e.key === 'y') { e.preventDefault(); redo(); return; }
 
+      // Escape always exits to select mode
+      if (e.key === 'Escape') { dispatch({ type: 'SET_TOOL_MODE', payload: 'select' }); return; }
+
       // Don't intercept if typing in input
       if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT') return;
 
@@ -250,7 +253,7 @@ function AppInner() {
       }
 
       // Tool shortcuts
-      if (e.key === 'v' || e.key === 'Escape') { dispatch({ type: 'SET_TOOL_MODE', payload: 'select' }); return; }
+      if (e.key === 'v') { dispatch({ type: 'SET_TOOL_MODE', payload: 'select' }); return; }
       if (e.key === 'm') { dispatch({ type: 'SET_TOOL_MODE', payload: 'measure' }); return; }
       if (e.key === 'p') { dispatch({ type: 'SET_TOOL_MODE', payload: 'draw-polygon' }); return; }
       if (e.key === 'g') { dispatch({ type: 'TOGGLE_GRID' }); return; }
