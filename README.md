@@ -35,7 +35,18 @@ npm run dev
 2. Run all migrations: `supabase db push` (or apply each file under `supabase/migrations/` via the SQL editor — this includes the initial schema and the `20260331000000_rooms.sql` rooms migration)
 3. Enable Google OAuth in Authentication → Providers → Google
 4. Create Storage buckets: `floor-plans` (private), `room-photos` (private), `style-results` (private)
-5. Copy your project URL and anon key to `.env.local`
+5. Add RLS policies for the private storage buckets. Run in the Supabase SQL editor:
+   ```sql
+   -- room-photos bucket policies
+   create policy "Users can upload room photos" on storage.objects for insert to authenticated with check (bucket_id = 'room-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can read own room photos" on storage.objects for select to authenticated using (bucket_id = 'room-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can delete own room photos" on storage.objects for delete to authenticated using (bucket_id = 'room-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+   -- style-results bucket policies
+   create policy "Users can upload style results" on storage.objects for insert to authenticated with check (bucket_id = 'style-results' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can read own style results" on storage.objects for select to authenticated using (bucket_id = 'style-results' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can delete own style results" on storage.objects for delete to authenticated using (bucket_id = 'style-results' and (storage.foldername(name))[1] = auth.uid()::text);
+   ```
+6. Copy your project URL and anon key to `.env.local`
 
 When adding new schema changes, commit SQL files under `supabase/migrations` and apply them with `supabase db push` in each environment.
 

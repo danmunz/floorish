@@ -8,7 +8,11 @@ import {
 } from '../lib/styleEngine';
 import { useAuth } from '../hooks/useAuth';
 
-export function ApiKeySettings() {
+interface ApiKeySettingsProps {
+  onKeyChange?: (hasKey: boolean) => void;
+}
+
+export function ApiKeySettings({ onKeyChange }: ApiKeySettingsProps) {
   const { user, isGuest } = useAuth();
   const [key, setKey] = useState(getReplicateApiKey() ?? '');
   const [status, setStatus] = useState<'idle' | 'testing' | 'connected' | 'failed'>('idle');
@@ -20,32 +24,38 @@ export function ApiKeySettings() {
   useEffect(() => {
     if (!user || isGuest) return;
     loadReplicateApiKeyFromProfile(user.id).then((loaded) => {
-      if (loaded) setKey(loaded);
+      if (loaded) {
+        setKey(loaded);
+        onKeyChange?.(true);
+      }
     });
-  }, [user, isGuest]);
+  }, [user, isGuest, onKeyChange]);
 
   const handleSave = useCallback(() => {
     const trimmed = key.trim();
     if (trimmed) {
       void saveReplicateApiKey(trimmed, user?.id);
       setStatus('idle');
+      onKeyChange?.(true);
     }
-  }, [key, user]);
+  }, [key, user, onKeyChange]);
 
   const handleTest = useCallback(async () => {
     const trimmed = key.trim();
     if (!trimmed) return;
     await saveReplicateApiKey(trimmed, user?.id);
+    onKeyChange?.(true);
     setStatus('testing');
     const ok = await testReplicateConnection();
     setStatus(ok ? 'connected' : 'failed');
-  }, [key, user]);
+  }, [key, user, onKeyChange]);
 
   const handleClear = useCallback(() => {
     void removeReplicateApiKey(user?.id);
     setKey('');
     setStatus('idle');
-  }, [user]);
+    onKeyChange?.(false);
+  }, [user, onKeyChange]);
 
   return (
     <div className="api-key-settings">
@@ -64,7 +74,9 @@ export function ApiKeySettings() {
         <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener noreferrer">
           Replicate API key
         </a>{' '}
-        to enable AI room restyling. Your key is saved to your account and syncs across devices.
+        to enable AI room restyling. {user && !isGuest
+          ? 'Your key is saved to your account and syncs across devices.'
+          : 'Your key is saved locally in this browser.'}
       </p>
 
       <div className="api-key-input-row">

@@ -168,7 +168,9 @@ export function resizeImageToBase64(
 }
 
 /**
- * Generate a restyled room image via the Replicate proxy.
+ * Generate a restyled room image via the Replicate proxy + client-side polling.
+ * The server creates the prediction and returns a poll URL; the client polls
+ * Replicate directly using the user's own API key (BYOK).
  */
 export async function generateRestyle(request: RestyleRequest): Promise<RestyleResult> {
   const apiKey = getReplicateApiKey();
@@ -179,6 +181,7 @@ export async function generateRestyle(request: RestyleRequest): Promise<RestyleR
   const prompt = buildPrompt(request.stylePresetId, request.customModifiers);
   const negativePrompt = DEFAULT_NEGATIVE_PROMPT;
 
+  // Step 1: Create prediction via the Vercel proxy
   const resp = await fetch(API_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -200,11 +203,41 @@ export async function generateRestyle(request: RestyleRequest): Promise<RestyleR
     );
   }
 
-  const data = await resp.json();
-  return {
-    imageUrl: data.output,
-    prompt,
-    negativePrompt,
-    denoiseStrength: request.denoiseStrength,
-  };
+  const prediction = await resp.json();
+  const pollUrl: string | undefined = prediction.poll_url;
+  if (!pollUrl) {
+    throw new Error('No polling URL returned from server');
+  }
+
+  // Step 2: Poll Replicate directly from client (BYOK key)
+  const maxAttempts = 60;
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 1500));
+
+    const pollResp = await fetch(pollUrl, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    if (!pollResp.ok) {
+      throw new Error(`Replicate polling error: ${pollResp.status}`);
+    }
+
+    const result = await pollResp.json();
+
+    if (result.status === 'succeeded') {
+      const output = Array.isArray(result.output) ? result.output[0] : result.output;
+      return {
+        imageUrl: output,
+        prompt,
+        negativePrompt,
+        denoiseStrength: request.denoiseStrength,
+      };
+    }
+
+    if (result.status === 'failed' || result.status === 'canceled') {
+      throw new Error(result.error || 'Generation failed');
+    }
+  }
+
+  throw new Error('Generation timed out after 90 seconds');
 }

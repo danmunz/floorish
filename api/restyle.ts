@@ -114,31 +114,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const prediction = await createResp.json();
-    let result = prediction;
 
-    // Poll for completion (max 90 seconds)
-    const maxAttempts = 60;
-    for (let i = 0; i < maxAttempts; i++) {
-      if (result.status === 'succeeded') {
-        const output = Array.isArray(result.output) ? result.output[0] : result.output;
-        return res.status(200).json({ output });
-      }
-      if (result.status === 'failed' || result.status === 'canceled') {
-        return res.status(500).json({
-          message: result.error || 'Generation failed',
-          code: 'GENERATION_FAILED',
-        });
-      }
-
-      await new Promise(r => setTimeout(r, 1500));
-
-      const pollResp = await fetch(result.urls.get, {
-        headers: { Authorization: `Bearer ${apiKey}` },
+    // Return prediction immediately — client polls Replicate directly (BYOK)
+    const pollUrl = prediction?.urls?.get;
+    if (!pollUrl) {
+      return res.status(500).json({
+        message: 'Invalid response from Replicate: missing polling URL',
+        code: 'INVALID_POLL_RESPONSE',
       });
-      result = await pollResp.json();
     }
 
-    return res.status(504).json({ message: 'Generation timed out', code: 'TIMEOUT' });
+    return res.status(202).json({
+      id: prediction.id,
+      status: prediction.status,
+      poll_url: pollUrl,
+    });
   } catch (err) {
     return res.status(500).json({
       message: `Server error: ${(err as Error).message}`,

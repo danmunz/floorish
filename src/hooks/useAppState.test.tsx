@@ -446,7 +446,7 @@ const makeRoom = (overrides?: Partial<Room>): Room => ({
   id: 'room-1',
   name: 'Living Room',
   color: '#E8D4B8',
-  vertices: [0, 0, 100, 0, 100, 100, 0, 100],
+  vertices: [0, 0, 1, 0, 1, 1, 0, 1],
   x: 50,
   y: 50,
   widthPx: 100,

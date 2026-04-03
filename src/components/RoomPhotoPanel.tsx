@@ -30,8 +30,14 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
       try {
         const records = await fetchRoomPhotos(projectId);
         if (cancelled) return;
-        // Filter by room if specified
-        const filtered = roomId ? records.filter(r => r.room_id === roomId) : records;
+        // Filter by floor plan and room
+        let filtered = records;
+        if (floorPlanId) {
+          filtered = filtered.filter(r => r.floor_plan_id === floorPlanId);
+        }
+        if (roomId) {
+          filtered = filtered.filter(r => r.room_id === roomId);
+        }
         // Resolve signed URLs
         const withUrls = await Promise.all(
           filtered.map(async (r) => {
@@ -47,7 +53,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
       }
     })();
     return () => { cancelled = true; };
-  }, [projectId, roomId]);
+  }, [projectId, floorPlanId, roomId]);
 
   const handleUpload = useCallback(async (files: FileList) => {
     if (!user || isGuest || !projectId) return;

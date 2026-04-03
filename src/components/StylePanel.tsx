@@ -31,7 +31,11 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
   const [showCompare, setShowCompare] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
 
-  const hasApiKey = !!getReplicateApiKey();
+  const [hasApiKey, setHasApiKey] = useState(!!getReplicateApiKey());
+
+  const handleKeyChange = useCallback((hasKey: boolean) => {
+    setHasApiKey(hasKey);
+  }, []);
 
   const handleSelectPhoto = useCallback((url: string | null, photoId: string | null) => {
     setSelectedPhotoUrl(url);
@@ -143,7 +147,7 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
   return (
     <div className="style-panel">
       {/* API Key Section */}
-      {!hasApiKey && <ApiKeySettings />}
+      {!hasApiKey && <ApiKeySettings onKeyChange={handleKeyChange} />}
 
       {/* Rooms */}
       <RoomListPanel floorPlanId={floorPlanId} />
@@ -298,7 +302,7 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
       {hasApiKey && (
         <details className="style-settings-details">
           <summary className="style-settings-summary">⚙️ API Settings</summary>
-          <ApiKeySettings />
+          <ApiKeySettings onKeyChange={handleKeyChange} />
         </details>
       )}
     </div>

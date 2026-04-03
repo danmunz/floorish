@@ -377,7 +377,7 @@ function AppInner() {
       ) : (
         <div className="app-body">
           <aside className="sidebar">
-            {state.toolMode === 'style' ? (
+            {(state.toolMode === 'style' || state.toolMode === 'draw-room') ? (
               <StylePanel
                 projectId={projectId}
                 floorPlanId={state.activeFloorPlanId}
