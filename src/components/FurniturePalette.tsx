@@ -3,6 +3,7 @@ import { useAppState } from '../hooks/useAppState';
 import { furniturePresets, categories } from '../data/furniturePresets';
 import type { FurniturePreset } from '../types';
 import { pixelsToInches, formatFeetInches } from '../utils/geometry';
+import { selectAllOnFocus } from '../utils/inputFocus';
 
 export function FurniturePalette() {
   const { state, dispatch } = useAppState();
@@ -27,10 +28,15 @@ export function FurniturePalette() {
 
   const handleSelectPreset = useCallback((preset: FurniturePreset) => {
     if (!ppf) return;
+    if (state.toolMode === 'place') {
+      dispatch({ type: 'SET_PLACING_PRESET', payload: preset });
+      setEditingPreset(null);
+      return;
+    }
     setEditingPreset(preset);
     setCustomW(String(preset.widthIn));
     setCustomD(String(preset.depthIn));
-  }, [ppf]);
+  }, [ppf, state.toolMode, dispatch]);
 
   const handlePlace = useCallback(() => {
     if (!editingPreset) return;
@@ -51,7 +57,7 @@ export function FurniturePalette() {
   const selectedItem = state.furniture.find(f => f.id === state.selectedFurnitureId);
 
   return (
-    <div className="palette">
+    <div className={`palette ${state.toolMode === 'place' ? 'palette-place-mode' : ''}`}>
       <div className="palette-header">
         <h2>Furniture</h2>
       </div>
@@ -67,13 +73,13 @@ export function FurniturePalette() {
       {state.toolMode === 'place' && state.placingPreset && (
         <div className="placing-indicator">
           <div className="placing-indicator-text">
-            Click on the floor plan to place:<br />
+            Placement mode: click the floor plan to place<br />
             <strong>{state.placingPreset.name}</strong>
             <span className="placing-dims">
               {state.placingPreset.widthIn}" × {state.placingPreset.depthIn}"
             </span>
           </div>
-          <button className="btn-sm btn-cancel" onClick={handleCancelPlace}>Cancel</button>
+          <button className="btn-sm btn-cancel" onClick={handleCancelPlace}>Done</button>
         </div>
       )}
 
@@ -83,11 +89,11 @@ export function FurniturePalette() {
           <div className="preset-editor-name">{editingPreset.name}</div>
           <div className="dim-inputs">
             <label>
-              W<input type="number" value={customW} onChange={e => setCustomW(e.target.value)} min="1" step="1" />"
+              W<input type="number" value={customW} onChange={e => setCustomW(e.target.value)} onFocus={selectAllOnFocus} min="1" step="1" />"
             </label>
             <span className="dim-x">×</span>
             <label>
-              D<input type="number" value={customD} onChange={e => setCustomD(e.target.value)} min="1" step="1" />"
+              D<input type="number" value={customD} onChange={e => setCustomD(e.target.value)} onFocus={selectAllOnFocus} min="1" step="1" />"
             </label>
           </div>
           <div className="preset-editor-actions">
@@ -104,6 +110,7 @@ export function FurniturePalette() {
         placeholder="Search furniture..."
         value={search}
         onChange={e => setSearch(e.target.value)}
+        disabled={state.toolMode === 'place'}
       />
 
       {/* Category tabs */}
@@ -111,6 +118,7 @@ export function FurniturePalette() {
         <button
           className={`cat-tab ${!activeCategory ? 'active' : ''}`}
           onClick={() => setActiveCategory(null)}
+          disabled={state.toolMode === 'place'}
         >
           All
         </button>
@@ -119,6 +127,7 @@ export function FurniturePalette() {
             key={cat}
             className={`cat-tab ${activeCategory === cat ? 'active' : ''}`}
             onClick={() => setActiveCategory(cat)}
+            disabled={state.toolMode === 'place'}
           >
             {cat}
           </button>
@@ -130,7 +139,7 @@ export function FurniturePalette() {
         {filtered.map(preset => (
           <button
             key={preset.id}
-            className={`preset-item ${editingPreset?.id === preset.id ? 'active' : ''}`}
+            className={`preset-item ${editingPreset?.id === preset.id || state.placingPreset?.id === preset.id ? 'active' : ''}`}
             onClick={() => handleSelectPreset(preset)}
             disabled={!ppf}
             title={`${preset.widthIn}" × ${preset.depthIn}"`}

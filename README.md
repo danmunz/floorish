@@ -13,7 +13,9 @@ A browser-based floor plan studio for arranging furniture to scale. Drop in a fl
 - **Floor plan import** — Load floor plan images via file picker or drag-and-drop; images stored in Supabase Storage
 - **Scale calibration** — Set two reference points and a known distance to establish real-world scale; OCR auto-detects printed dimensions via Tesseract.js
 - **Furniture catalog** — Pre-built library of common furniture (seating, tables, beds, storage, appliances, bathroom fixtures) with accurate real-world dimensions
+- **Placement mode workflow** — Pick an item, click to place repeatedly, switch presets while staying in placement mode, and use Done or Esc to exit
 - **Drag, rotate, snap** — Place and arrange items on the canvas with 15° rotation snapping, grid snapping, and locking
+- **Faster numeric editing** — Calibration and dimension fields select all on focus so typing immediately replaces the current value
 - **Custom shapes** — Draw arbitrary polygon regions directly on the plan
 - **Measurement tool** — Measure distances between any two points in calibrated feet/inches
 - **Share projects** — Generate read-only share links for collaborators and clients

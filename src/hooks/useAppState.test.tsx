@@ -478,4 +478,15 @@ describe('SET_PLACING_PRESET', () => {
     expect(result.current.state.placingPreset).toBeNull();
     expect(result.current.state.toolMode).toBe('select');
   });
+
+  it('keeps placing preset active when furniture is added', () => {
+    const { result } = setup();
+    const preset = { id: 'sofa-3seat', category: 'Seating', name: '3-Seat Sofa', widthIn: 84, depthIn: 36, shape: 'rect' as const, color: '#5B8C6B' };
+
+    act(() => result.current.dispatch({ type: 'SET_PLACING_PRESET', payload: preset }));
+    act(() => result.current.dispatch({ type: 'ADD_FURNITURE', payload: makeFurniture({ id: 'placed-1' }) }));
+
+    expect(result.current.state.toolMode).toBe('place');
+    expect(result.current.state.placingPreset).toEqual(preset);
+  });
 });

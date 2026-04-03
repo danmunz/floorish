@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import { useOCR } from '../hooks/useOCR';
 import { computePixelsPerFoot, formatFeetInches, pixelDistance } from '../utils/geometry';
+import { selectAllOnFocus } from '../utils/inputFocus';
 
 export function CalibrationPanel() {
   const { state, dispatch } = useAppState();
@@ -144,6 +145,7 @@ export function CalibrationPanel() {
                       type="number"
                       value={manualFeet}
                       onChange={e => setManualFeet(e.target.value)}
+                      onFocus={selectAllOnFocus}
                       placeholder="0"
                       min="0"
                       step="1"
@@ -155,6 +157,7 @@ export function CalibrationPanel() {
                       type="number"
                       value={manualInches}
                       onChange={e => setManualInches(e.target.value)}
+                      onFocus={selectAllOnFocus}
                       placeholder="0"
                       min="0"
                       max="11"

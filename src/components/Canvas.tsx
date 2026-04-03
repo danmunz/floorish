@@ -16,8 +16,10 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
   const { state, dispatch } = useAppState();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const placementFeedbackTimerRef = useRef<number | null>(null);
   const [dims, setDims] = useState({ width: 800, height: 600 });
   const [floorImage, setFloorImage] = useState<HTMLImageElement | null>(null);
+  const [justPlacedId, setJustPlacedId] = useState<string | null>(null);
 
   useImperativeHandle(ref, () => ({
     get stage() { return stageRef.current; },
@@ -49,6 +51,14 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
     img.src = activeFloorPlan.imageUrl;
     img.onload = () => setFloorImage(img);
   }, [activeFloorPlan?.imageUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (placementFeedbackTimerRef.current !== null) {
+        window.clearTimeout(placementFeedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   // Fit image when first loaded
   useEffect(() => {
@@ -154,6 +164,14 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
           locked: false,
         };
         dispatch({ type: 'ADD_FURNITURE', payload: newItem });
+        setJustPlacedId(newItem.id);
+        if (placementFeedbackTimerRef.current !== null) {
+          window.clearTimeout(placementFeedbackTimerRef.current);
+        }
+        placementFeedbackTimerRef.current = window.setTimeout(() => {
+          setJustPlacedId(null);
+          placementFeedbackTimerRef.current = null;
+        }, 320);
         // Keep placing mode so user can place more
         return;
       }
@@ -410,6 +428,7 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
               key={item.id}
               item={item}
               isSelected={state.selectedFurnitureId === item.id}
+              isJustPlaced={justPlacedId === item.id}
               snapPos={snapPos}
               stageScale={state.stageScale}
             />
