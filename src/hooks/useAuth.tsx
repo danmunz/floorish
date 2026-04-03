@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { clearReplicateApiKey } from '../lib/styleEngine';
 
 interface AuthContextValue {
   user: User | null;
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    clearReplicateApiKey();
     setUser(null);
     setSession(null);
   }, []);

@@ -68,6 +68,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ message: 'Missing required fields: image, prompt' });
   }
 
+  // Validate denoise_strength bounds
+  const denoise = body.denoise_strength ?? 0.65;
+  if (denoise < 0.35 || denoise > 0.85) {
+    return res.status(400).json({ message: 'denoise_strength must be between 0.35 and 0.85' });
+  }
+
+  // Reject excessively large base64 payloads (>10 MB encoded ≈ ~7.5 MB image)
+  if (body.image.length > 10 * 1024 * 1024) {
+    return res.status(400).json({ message: 'Image payload too large (max 10 MB base64)' });
+  }
+
   try {
     // Create a prediction on Replicate
     const version = MODEL_VERSION.split(':')[1];

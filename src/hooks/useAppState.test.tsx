@@ -579,6 +579,20 @@ describe('LOAD_STATE', () => {
     expect(result.current.state.gridSizeIn).toBe(24);
     expect(result.current.state.toolMode).toBe('select'); // unchanged
   });
+
+  it('loads rooms as part of LOAD_STATE', () => {
+    const { result } = setup();
+    const rooms = [makeRoom({ id: 'r1', name: 'Kitchen' }), makeRoom({ id: 'r2', name: 'Bedroom' })];
+
+    act(() => result.current.dispatch({
+      type: 'LOAD_STATE',
+      payload: { rooms },
+    }));
+
+    expect(result.current.state.rooms).toHaveLength(2);
+    expect(result.current.state.rooms[0].name).toBe('Kitchen');
+    expect(result.current.state.rooms[1].name).toBe('Bedroom');
+  });
 });
 
 describe('SET_PLACING_PRESET', () => {

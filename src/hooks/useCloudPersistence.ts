@@ -9,6 +9,7 @@ import {
   deleteFurniture,
   deleteFloorPlan,
 } from '../lib/api';
+import { upsertRoom, deleteRoom } from '../lib/roomApi';
 
 const DEBOUNCE_MS = 800;
 const MAX_RETRIES = 3;
@@ -110,6 +111,14 @@ function hasCloudRelevantChanges(prev: AppState, curr: AppState): boolean {
   for (const furniture of curr.furniture) {
     const previousFurniture = prev.furniture.find((entry) => entry.id === furniture.id);
     if (!previousFurniture || previousFurniture !== furniture) {
+      return true;
+    }
+  }
+
+  if (curr.rooms.length !== prev.rooms.length) return true;
+  for (const room of curr.rooms) {
+    const previousRoom = prev.rooms.find((entry) => entry.id === room.id);
+    if (!previousRoom || previousRoom !== room) {
       return true;
     }
   }
@@ -255,6 +264,38 @@ export function useCloudPersistence(projectId: string | null) {
         }
       }
 
+      // Sync rooms
+      const currRoomIds = new Set(curr.rooms.map((r) => r.id));
+      const prevRoomIds = new Set(prev.rooms.map((r) => r.id));
+
+      for (const room of curr.rooms) {
+        const prevRoom = prev.rooms.find((r) => r.id === room.id);
+        if (!prevRoom || prevRoom !== room) {
+          await runWithRetry(async () => {
+            await upsertRoom({
+              id: room.id,
+              floor_plan_id: room.floorPlanId,
+              name: room.name,
+              color: room.color,
+              vertices: room.vertices,
+              x: room.x,
+              y: room.y,
+              width_px: room.widthPx,
+              height_px: room.heightPx,
+              sort_order: curr.rooms.indexOf(room),
+            });
+          });
+        }
+      }
+
+      for (const id of prevRoomIds) {
+        if (!currRoomIds.has(id)) {
+          await runWithRetry(async () => {
+            await deleteRoom(id);
+          });
+        }
+      }
+
       prevStateRef.current = curr;
       dirtyRef.current = false;
       setSaveState({
@@ -314,6 +355,7 @@ export function useCloudPersistence(projectId: string | null) {
   }, [
     state.furniture,
     state.floorPlans,
+    state.rooms,
     state.showGrid,
     state.gridSizeIn,
     state.snapToGrid,

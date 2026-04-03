@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
-import { STYLE_PRESETS } from '../data/stylePresets';
+import { STYLE_PRESETS, buildPrompt, DEFAULT_NEGATIVE_PROMPT } from '../data/stylePresets';
 import { generateRestyle, getReplicateApiKey, resizeImageToBase64 } from '../lib/styleEngine';
+import { insertStyleGeneration, updateStyleGeneration } from '../lib/styleApi';
+import { uploadStyleResult, getStyleResultUrl } from '../lib/roomPhotoStorage';
+import { useAuth } from '../hooks/useAuth';
 import { ApiKeySettings } from './ApiKeySettings';
 import { RoomPhotoPanel } from './RoomPhotoPanel';
 import { useAppState } from '../hooks/useAppState';
@@ -15,8 +18,10 @@ type GenerationStatus = 'idle' | 'generating' | 'done' | 'error';
 
 export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
   const { state } = useAppState();
+  const { user } = useAuth();
   const currentRooms = state.rooms.filter(r => r.floorPlanId === floorPlanId);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+  const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string>('japandi');
   const [customModifiers, setCustomModifiers] = useState('');
   const [denoiseStrength, setDenoiseStrength] = useState(0.65);
@@ -28,8 +33,9 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
 
   const hasApiKey = !!getReplicateApiKey();
 
-  const handleSelectPhoto = useCallback((url: string | null, _photoId: string | null) => {
+  const handleSelectPhoto = useCallback((url: string | null, photoId: string | null) => {
     setSelectedPhotoUrl(url);
+    setSelectedPhotoId(photoId);
     setResultImageUrl(null);
     setStatus('idle');
     setError(null);
@@ -42,6 +48,28 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
     setError(null);
     setResultImageUrl(null);
 
+    const prompt = buildPrompt(selectedStyle, customModifiers.trim() || undefined);
+    const negativePrompt = DEFAULT_NEGATIVE_PROMPT;
+
+    // Create a pending generation record in the DB
+    let generationId: string | null = null;
+    if (projectId) {
+      try {
+        const gen = await insertStyleGeneration({
+          project_id: projectId,
+          source_photo_id: selectedPhotoId,
+          style_preset: selectedStyle,
+          prompt,
+          negative_prompt: negativePrompt,
+          denoise_strength: denoiseStrength,
+          status: 'pending',
+        });
+        generationId = gen.id;
+      } catch {
+        // Non-blocking: continue even if DB insert fails
+      }
+    }
+
     try {
       const imageBase64 = await resizeImageToBase64(selectedPhotoUrl, 512);
       const result = await generateRestyle({
@@ -50,13 +78,45 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
         customModifiers: customModifiers.trim() || undefined,
         denoiseStrength,
       });
-      setResultImageUrl(result.imageUrl);
+
+      // Upload result image to storage for persistence
+      let persistedUrl = result.imageUrl;
+      if (user) {
+        try {
+          const resp = await fetch(result.imageUrl);
+          const blob = await resp.blob();
+          const storagePath = await uploadStyleResult(blob, user.id);
+          const signedUrl = await getStyleResultUrl(storagePath);
+          if (signedUrl) persistedUrl = signedUrl;
+
+          if (generationId) {
+            await updateStyleGeneration(generationId, {
+              result_image_path: storagePath,
+              status: 'completed',
+            });
+          }
+        } catch {
+          // Storage upload failed — still show the Replicate URL
+          if (generationId) {
+            await updateStyleGeneration(generationId, { status: 'completed' }).catch(() => {});
+          }
+        }
+      }
+
+      setResultImageUrl(persistedUrl);
       setStatus('done');
     } catch (err) {
-      setError((err as Error).message);
+      const message = (err as Error).message;
+      setError(message);
       setStatus('error');
+      if (generationId) {
+        await updateStyleGeneration(generationId, {
+          status: 'failed',
+          error_message: message,
+        }).catch(() => {});
+      }
     }
-  }, [selectedPhotoUrl, selectedStyle, customModifiers, denoiseStrength]);
+  }, [selectedPhotoUrl, selectedPhotoId, selectedStyle, customModifiers, denoiseStrength, projectId, user]);
 
   const handleDownload = useCallback(async () => {
     if (!resultImageUrl) return;

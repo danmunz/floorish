@@ -17,6 +17,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
   const [photos, setPhotos] = useState<(RoomPhoto & { url?: string })[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load photos for the project
@@ -51,12 +52,18 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
   const handleUpload = useCallback(async (files: FileList) => {
     if (!user || isGuest || !projectId) return;
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
     setUploading(true);
+    setErrorMsg(null);
     try {
       const fileArray = Array.from(files);
       for (let i = 0; i < fileArray.length; i++) {
         const file = fileArray[i];
         if (!file.type.startsWith('image/')) continue;
+        if (file.size > MAX_FILE_SIZE) {
+          setErrorMsg(`"${file.name}" exceeds 10 MB limit.`);
+          continue;
+        }
 
         const imagePath = await uploadRoomPhoto(file, user.id);
         const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
@@ -73,6 +80,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
       }
     } catch (err) {
       console.error('Failed to upload room photo:', err);
+      setErrorMsg('Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -88,6 +96,7 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
       }
     } catch (err) {
       console.error('Failed to delete room photo:', err);
+      setErrorMsg('Failed to delete photo. Please try again.');
     }
   }, [selectedPhotoUrl, onSelectPhoto]);
 
@@ -121,6 +130,13 @@ export function RoomPhotoPanel({ projectId, floorPlanId, selectedPhotoUrl, onSel
           onChange={e => e.target.files && handleUpload(e.target.files)}
         />
       </div>
+
+      {errorMsg && (
+        <div className="room-photo-error" role="alert">
+          {errorMsg}
+          <button className="room-photo-error-dismiss" onClick={() => setErrorMsg(null)}>×</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="room-photo-loading">Loading photos…</div>
