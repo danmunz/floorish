@@ -14,18 +14,21 @@ export interface Database {
           id: string;
           display_name: string | null;
           avatar_url: string | null;
+          replicate_api_key: string | null;
           created_at: string;
         };
         Insert: {
           id: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          replicate_api_key?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          replicate_api_key?: string | null;
         };
       };
       projects: {

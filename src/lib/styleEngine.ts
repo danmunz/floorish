@@ -1,6 +1,7 @@
 // Style engine — client module for AI room restyling via Replicate
 
 import { buildPrompt, DEFAULT_NEGATIVE_PROMPT } from '../data/stylePresets';
+import { supabase } from './supabase';
 
 export interface RestyleRequest {
   imageBase64: string;       // base64-encoded source image (no data: prefix)
@@ -22,26 +23,79 @@ export interface RestyleError {
 }
 
 const API_ENDPOINT = '/api/restyle';
+const LOCAL_KEY = 'floorish_replicate_key';
 
 /**
- * Get the user's Replicate API key from localStorage.
+ * Get the user's Replicate API key from the localStorage cache.
  */
 export function getReplicateApiKey(): string | null {
-  return localStorage.getItem('floorish_replicate_key');
+  return localStorage.getItem(LOCAL_KEY);
 }
 
 /**
- * Store the user's Replicate API key in localStorage.
+ * Store the user's Replicate API key in localStorage (cache only).
  */
 export function setReplicateApiKey(key: string): void {
-  localStorage.setItem('floorish_replicate_key', key);
+  localStorage.setItem(LOCAL_KEY, key);
 }
 
 /**
- * Remove the stored Replicate API key.
+ * Remove the cached Replicate API key from localStorage.
  */
 export function clearReplicateApiKey(): void {
-  localStorage.removeItem('floorish_replicate_key');
+  localStorage.removeItem(LOCAL_KEY);
+}
+
+/**
+ * Load the user's Replicate API key from Supabase profiles into localStorage.
+ * Call once on login / app init for authenticated users.
+ */
+export async function loadReplicateApiKeyFromProfile(userId: string): Promise<string | null> {
+  if (!supabase) return getReplicateApiKey();
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('replicate_api_key')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error || !data?.replicate_api_key) return getReplicateApiKey();
+    localStorage.setItem(LOCAL_KEY, data.replicate_api_key);
+    return data.replicate_api_key;
+  } catch {
+    return getReplicateApiKey();
+  }
+}
+
+/**
+ * Save the user's Replicate API key to both localStorage and Supabase profiles.
+ */
+export async function saveReplicateApiKey(key: string, userId?: string): Promise<void> {
+  localStorage.setItem(LOCAL_KEY, key);
+  if (!supabase || !userId) return;
+  try {
+    await supabase
+      .from('profiles')
+      .update({ replicate_api_key: key })
+      .eq('id', userId);
+  } catch {
+    // localStorage is already set — DB sync is best-effort
+  }
+}
+
+/**
+ * Remove the user's Replicate API key from both localStorage and Supabase profiles.
+ */
+export async function removeReplicateApiKey(userId?: string): Promise<void> {
+  localStorage.removeItem(LOCAL_KEY);
+  if (!supabase || !userId) return;
+  try {
+    await supabase
+      .from('profiles')
+      .update({ replicate_api_key: null })
+      .eq('id', userId);
+  } catch {
+    // best-effort
+  }
 }
 
 /**

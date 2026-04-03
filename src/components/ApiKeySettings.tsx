@@ -1,40 +1,51 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   getReplicateApiKey,
-  setReplicateApiKey,
-  clearReplicateApiKey,
+  saveReplicateApiKey,
+  removeReplicateApiKey,
+  loadReplicateApiKeyFromProfile,
   testReplicateConnection,
 } from '../lib/styleEngine';
+import { useAuth } from '../hooks/useAuth';
 
 export function ApiKeySettings() {
+  const { user, isGuest } = useAuth();
   const [key, setKey] = useState(getReplicateApiKey() ?? '');
   const [status, setStatus] = useState<'idle' | 'testing' | 'connected' | 'failed'>('idle');
   const [showKey, setShowKey] = useState(false);
 
   const hasKey = !!getReplicateApiKey();
 
+  // Load key from profile on mount for authenticated users
+  useEffect(() => {
+    if (!user || isGuest) return;
+    loadReplicateApiKeyFromProfile(user.id).then((loaded) => {
+      if (loaded) setKey(loaded);
+    });
+  }, [user, isGuest]);
+
   const handleSave = useCallback(() => {
     const trimmed = key.trim();
     if (trimmed) {
-      setReplicateApiKey(trimmed);
+      void saveReplicateApiKey(trimmed, user?.id);
       setStatus('idle');
     }
-  }, [key]);
+  }, [key, user]);
 
   const handleTest = useCallback(async () => {
     const trimmed = key.trim();
     if (!trimmed) return;
-    setReplicateApiKey(trimmed);
+    await saveReplicateApiKey(trimmed, user?.id);
     setStatus('testing');
     const ok = await testReplicateConnection();
     setStatus(ok ? 'connected' : 'failed');
-  }, [key]);
+  }, [key, user]);
 
   const handleClear = useCallback(() => {
-    clearReplicateApiKey();
+    void removeReplicateApiKey(user?.id);
     setKey('');
     setStatus('idle');
-  }, []);
+  }, [user]);
 
   return (
     <div className="api-key-settings">
@@ -53,7 +64,7 @@ export function ApiKeySettings() {
         <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener noreferrer">
           Replicate API key
         </a>{' '}
-        to enable AI room restyling. Your key is stored locally in your browser.
+        to enable AI room restyling. Your key is saved to your account and syncs across devices.
       </p>
 
       <div className="api-key-input-row">
