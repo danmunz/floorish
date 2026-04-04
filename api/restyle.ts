@@ -6,8 +6,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const REPLICATE_API = 'https://api.replicate.com/v1';
 
 // ControlNet img2img model on Replicate
-// Using jagilley/controlnet-depth for depth-conditioned generation
-const MODEL_VERSION = 'jagilley/controlnet-depth:cec3dc6e8389c0384f64f3f7e8dd6fc85dbc2f66d74345cf67bfc9ac0607bfef';
+// Using rossjillian/controlnet with depth structure conditioning
+const MODEL_VERSION = 'rossjillian/controlnet:795433b19458d0f4fa172a7ccf93178d2adb1cb8ab2ad6c8fdc33fdbcd49f477';
 
 interface RestyleRequestBody {
   image: string;           // base64-encoded source image
@@ -94,13 +94,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         input: {
           image: `data:image/jpeg;base64,${body.image}`,
           prompt: body.prompt,
-          n_prompt: body.negative_prompt || '',
-          ddim_steps: 30,
-          strength: body.denoise_strength ?? 0.65,
+          negative_prompt: body.negative_prompt || '',
+          structure: 'depth',
+          steps: 30,
+          eta: body.denoise_strength ?? 0.65,
           scale: 7.5,
-          detect_resolution: 512,
           image_resolution: 512,
-          a_prompt: 'best quality, high resolution',
         },
       }),
     });
