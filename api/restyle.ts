@@ -17,14 +17,19 @@ interface RestyleRequestBody {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
+  // CORS headers — allow production + Vercel preview deployments
   const origin = req.headers.origin as string | undefined;
   const allowedOriginsEnv = process.env.ALLOWED_ORIGINS;
   const allowedOrigins = allowedOriginsEnv
     ? allowedOriginsEnv.split(',').map((o) => o.trim()).filter(Boolean)
     : ['https://floorish.vercel.app'];
 
-  if (origin && allowedOrigins.includes(origin)) {
+  const isAllowed = origin && (
+    allowedOrigins.includes(origin) ||
+    /^https:\/\/floorish[a-z0-9-]*\.vercel\.app$/.test(origin)
+  );
+
+  if (isAllowed) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
