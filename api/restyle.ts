@@ -64,6 +64,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // GET with ?poll=<url> — poll a prediction status (proxied to avoid CORS)
+  if (req.method === 'GET' && req.query.poll) {
+    const pollUrl = req.query.poll as string;
+    if (!pollUrl.startsWith(REPLICATE_API)) {
+      return res.status(400).json({ message: 'Invalid poll URL' });
+    }
+    try {
+      const pollResp = await fetch(pollUrl, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!pollResp.ok) {
+        const errorBody = await pollResp.json().catch(() => ({}));
+        return res.status(pollResp.status).json({
+          message: (errorBody as { detail?: string }).detail ?? `Replicate polling error: ${pollResp.status}`,
+          code: 'REPLICATE_ERROR',
+        });
+      }
+      const result = await pollResp.json();
+      return res.status(200).json(result);
+    } catch (err) {
+      return res.status(502).json({
+        message: `Failed to poll Replicate: ${(err as Error).message}`,
+        code: 'POLL_ERROR',
+      });
+    }
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }

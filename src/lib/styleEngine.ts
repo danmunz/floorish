@@ -209,14 +209,15 @@ export async function generateRestyle(request: RestyleRequest): Promise<RestyleR
     throw new Error('No polling URL returned from server');
   }
 
-  // Step 2: Poll Replicate directly from client (BYOK key)
+  // Step 2: Poll Replicate via proxy (avoids browser CORS restrictions)
   const maxAttempts = 60;
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise(r => setTimeout(r, 1500));
 
-    const pollResp = await fetch(pollUrl, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const pollResp = await fetch(
+      `${API_ENDPOINT}?poll=${encodeURIComponent(pollUrl)}`,
+      { headers: { 'X-Replicate-Key': apiKey } },
+    );
 
     if (!pollResp.ok) {
       throw new Error(`Replicate polling error: ${pollResp.status}`);
