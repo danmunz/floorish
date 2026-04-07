@@ -1925,6 +1925,53 @@ html, body, #root {
   opacity: 0.85;
 }
 
+/* ── Style Mode Toggle ── */
+
+.style-mode-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.style-mode-toggle {
+  display: flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.style-mode-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.style-mode-btn:first-child {
+  border-right: 1px solid var(--border-strong);
+}
+
+.style-mode-btn:hover:not(.active) {
+  background: var(--bg-hover);
+}
+
+.style-mode-btn.active {
+  background: var(--forest);
+  color: var(--linen);
+  font-weight: 600;
+}
+
+.style-mode-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 /* ── Style Presets ── */
 
 .style-presets-section,

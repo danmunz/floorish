@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { STYLE_PRESETS, buildPrompt, DEFAULT_NEGATIVE_PROMPT } from '../data/stylePresets';
+import { STYLE_PRESETS, buildPrompt, getNegativePrompt } from '../data/stylePresets';
+import type { StyleMode } from '../data/stylePresets';
 import { generateRestyle, getReplicateApiKey, resizeImageToBase64 } from '../lib/styleEngine';
 import { insertStyleGeneration, updateStyleGeneration } from '../lib/styleApi';
 import { uploadStyleResult, getStyleResultUrl } from '../lib/roomPhotoStorage';
@@ -24,7 +25,9 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string>('japandi');
   const [customModifiers, setCustomModifiers] = useState('');
+  const [styleMode, setStyleMode] = useState<StyleMode>('stage');
   const [denoiseStrength, setDenoiseStrength] = useState(0.65);
+  const [promptStrength, setPromptStrength] = useState(0.8);
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,8 +55,9 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
     setError(null);
     setResultImageUrl(null);
 
-    const prompt = buildPrompt(selectedStyle, customModifiers.trim() || undefined);
-    const negativePrompt = DEFAULT_NEGATIVE_PROMPT;
+    const strength = styleMode === 'stage' ? promptStrength : denoiseStrength;
+    const prompt = buildPrompt(selectedStyle, styleMode, customModifiers.trim() || undefined);
+    const negativePrompt = getNegativePrompt(styleMode);
 
     // Create a pending generation record in the DB
     let generationId: string | null = null;
@@ -65,8 +69,9 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
           style_preset: selectedStyle,
           prompt,
           negative_prompt: negativePrompt,
-          denoise_strength: denoiseStrength,
+          denoise_strength: strength,
           status: 'pending',
+          mode: styleMode,
         });
         generationId = gen.id;
       } catch {
@@ -80,7 +85,8 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
         imageBase64,
         stylePresetId: selectedStyle,
         customModifiers: customModifiers.trim() || undefined,
-        denoiseStrength,
+        denoiseStrength: strength,
+        mode: styleMode,
       });
 
       // Upload result image to storage for persistence
@@ -120,7 +126,7 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
         }).catch(() => {});
       }
     }
-  }, [selectedPhotoUrl, selectedPhotoId, selectedStyle, customModifiers, denoiseStrength, projectId, user]);
+  }, [selectedPhotoUrl, selectedPhotoId, selectedStyle, customModifiers, denoiseStrength, promptStrength, styleMode, projectId, user]);
 
   const handleDownload = useCallback(async () => {
     if (!resultImageUrl) return;
@@ -144,10 +150,41 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
       ? 'Balanced'
       : 'Full restyle';
 
+  const stagingLabel = promptStrength <= 0.4
+    ? 'Subtle'
+    : promptStrength <= 0.7
+      ? 'Balanced'
+      : promptStrength <= 0.9
+        ? 'Creative'
+        : 'Full redesign';
+
   return (
     <div className="style-panel">
       {/* API Key Section */}
       {!hasApiKey && <ApiKeySettings onKeyChange={handleKeyChange} />}
+
+      {/* Mode Toggle */}
+      <div className="style-mode-section">
+        <div className="style-mode-toggle">
+          <button
+            className={`style-mode-btn ${styleMode === 'stage' ? 'active' : ''}`}
+            onClick={() => setStyleMode('stage')}
+          >
+            🪑 Stage
+          </button>
+          <button
+            className={`style-mode-btn ${styleMode === 'restyle' ? 'active' : ''}`}
+            onClick={() => setStyleMode('restyle')}
+          >
+            🎨 Restyle
+          </button>
+        </div>
+        <p className="style-mode-hint">
+          {styleMode === 'stage'
+            ? 'Add furniture & decor to an empty room'
+            : 'Change the aesthetic of a furnished room'}
+        </p>
+      </div>
 
       {/* Rooms */}
       <RoomListPanel floorPlanId={floorPlanId} />
@@ -198,29 +235,54 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
         />
       </div>
 
-      {/* Denoise Slider */}
-      <div className="style-denoise-section">
-        <div className="style-denoise-header">
-          <label className="style-section-label" htmlFor="denoise-slider">
-            Transform Strength
-          </label>
-          <span className="style-denoise-value">{denoiseLabel} ({Math.round(denoiseStrength * 100)}%)</span>
+      {/* Strength Slider */}
+      {styleMode === 'restyle' ? (
+        <div className="style-denoise-section">
+          <div className="style-denoise-header">
+            <label className="style-section-label" htmlFor="denoise-slider">
+              Transform Strength
+            </label>
+            <span className="style-denoise-value">{denoiseLabel} ({Math.round(denoiseStrength * 100)}%)</span>
+          </div>
+          <input
+            id="denoise-slider"
+            type="range"
+            className="style-denoise-slider"
+            min={0.35}
+            max={0.85}
+            step={0.05}
+            value={denoiseStrength}
+            onChange={e => setDenoiseStrength(parseFloat(e.target.value))}
+          />
+          <div className="style-denoise-labels">
+            <span>Preserve</span>
+            <span>Restyle</span>
+          </div>
         </div>
-        <input
-          id="denoise-slider"
-          type="range"
-          className="style-denoise-slider"
-          min={0.35}
-          max={0.85}
-          step={0.05}
-          value={denoiseStrength}
-          onChange={e => setDenoiseStrength(parseFloat(e.target.value))}
-        />
-        <div className="style-denoise-labels">
-          <span>Preserve</span>
-          <span>Restyle</span>
+      ) : (
+        <div className="style-denoise-section">
+          <div className="style-denoise-header">
+            <label className="style-section-label" htmlFor="staging-slider">
+              Prompt Strength
+            </label>
+            <span className="style-denoise-value">{stagingLabel} ({Math.round(promptStrength * 100)}%)</span>
+          </div>
+          <input
+            id="staging-slider"
+            type="range"
+            className="style-denoise-slider"
+            min={0.5}
+            max={1.0}
+            step={0.05}
+            value={promptStrength}
+            onChange={e => setPromptStrength(parseFloat(e.target.value))}
+          />
+          <div className="style-denoise-labels">
+            <span>Conservative</span>
+            <span>Creative</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Generate Button */}
       <button
@@ -234,7 +296,7 @@ export function StylePanel({ projectId, floorPlanId }: StylePanelProps) {
             Generating…
           </>
         ) : (
-          '🎨 Generate Restyle'
+          styleMode === 'stage' ? '🪑 Generate Staging' : '🎨 Generate Restyle'
         )}
       </button>
 

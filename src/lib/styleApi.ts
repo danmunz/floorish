@@ -65,6 +65,8 @@ export interface StyleGeneration {
   result_image_path: string | null;
   status: StyleGenerationStatus;
   error_message: string | null;
+  mode: string | null;
+  room_id: string | null;
   created_at: string;
 }
 
@@ -88,6 +90,9 @@ export async function insertStyleGeneration(gen: {
   denoise_strength: number;
   result_image_path?: string | null;
   status: StyleGenerationStatus;
+  error_message?: string | null;
+  mode?: string | null;
+}): Promise<StyleGeneration> {
   error_message?: string | null;
 }): Promise<StyleGeneration> {
   if (!supabase) throw new Error('Supabase not configured');

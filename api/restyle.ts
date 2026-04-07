@@ -5,15 +5,21 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const REPLICATE_API = 'https://api.replicate.com/v1';
 
-// ControlNet img2img model on Replicate
-// Using rossjillian/controlnet with depth structure conditioning
-const MODEL_VERSION = 'rossjillian/controlnet:795433b19458d0f4fa172a7ccf93178d2adb1cb8ab2ad6c8fdc33fdbcd49f477';
+// ControlNet img2img model — restyle mode (change aesthetic of furnished room)
+const RESTYLE_MODEL_VERSION = 'rossjillian/controlnet:795433b19458d0f4fa172a7ccf93178d2adb1cb8ab2ad6c8fdc33fdbcd49f477';
+
+// Interior design model — stage mode (add furniture to empty room)
+// Uses room segmentation + MLSD ControlNet for structure-aware staging
+const STAGE_MODEL_VERSION = 'adirik/interior-design:76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38';
+
+type StyleMode = 'stage' | 'restyle';
 
 interface RestyleRequestBody {
   image: string;           // base64-encoded source image
   prompt: string;
   negative_prompt: string;
   denoise_strength: number;
+  mode?: StyleMode;        // defaults to 'restyle' for backward compatibility
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -100,10 +106,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ message: 'Missing required fields: image, prompt' });
   }
 
-  // Validate denoise_strength bounds
-  const denoise = body.denoise_strength ?? 0.65;
-  if (denoise < 0.35 || denoise > 0.85) {
-    return res.status(400).json({ message: 'denoise_strength must be between 0.35 and 0.85' });
+  const mode: StyleMode = body.mode === 'stage' ? 'stage' : 'restyle';
+
+  // Validate denoise_strength / prompt_strength bounds
+  const strength = body.denoise_strength ?? (mode === 'stage' ? 0.8 : 0.65);
+  if (mode === 'restyle') {
+    if (strength < 0.35 || strength > 0.85) {
+      return res.status(400).json({ message: 'denoise_strength must be between 0.35 and 0.85' });
+    }
+  } else {
+    if (strength < 0 || strength > 1) {
+      return res.status(400).json({ message: 'prompt_strength must be between 0 and 1' });
+    }
   }
 
   // Reject excessively large base64 payloads (>10 MB encoded ≈ ~7.5 MB image)
@@ -112,8 +126,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Create a prediction on Replicate
-    const version = MODEL_VERSION.split(':')[1];
+    // Build model-specific prediction request
+    const modelVersion = mode === 'stage' ? STAGE_MODEL_VERSION : RESTYLE_MODEL_VERSION;
+    const version = modelVersion.split(':')[1];
+
+    const input = mode === 'stage'
+      ? {
+          image: `data:image/jpeg;base64,${body.image}`,
+          prompt: body.prompt,
+          negative_prompt: body.negative_prompt || '',
+          guidance_scale: 15,
+          num_inference_steps: 50,
+          prompt_strength: strength,
+        }
+      : {
+          image: `data:image/jpeg;base64,${body.image}`,
+          prompt: body.prompt,
+          negative_prompt: body.negative_prompt || '',
+          structure: 'depth',
+          steps: 30,
+          eta: strength,
+          scale: 7.5,
+          image_resolution: 512,
+        };
 
     const createResp = await fetch(`${REPLICATE_API}/predictions`, {
       method: 'POST',
@@ -121,19 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        version,
-        input: {
-          image: `data:image/jpeg;base64,${body.image}`,
-          prompt: body.prompt,
-          negative_prompt: body.negative_prompt || '',
-          structure: 'depth',
-          steps: 30,
-          eta: body.denoise_strength ?? 0.65,
-          scale: 7.5,
-          image_resolution: 512,
-        },
-      }),
+      body: JSON.stringify({ version, input }),
     });
 
     if (!createResp.ok) {

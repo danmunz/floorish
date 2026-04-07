@@ -1,13 +1,15 @@
 // Style engine — client module for AI room restyling via Replicate
 
-import { buildPrompt, DEFAULT_NEGATIVE_PROMPT } from '../data/stylePresets';
+import { buildPrompt, getNegativePrompt } from '../data/stylePresets';
+import type { StyleMode } from '../data/stylePresets';
 import { supabase } from './supabase';
 
 export interface RestyleRequest {
   imageBase64: string;       // base64-encoded source image (no data: prefix)
   stylePresetId: string;
   customModifiers?: string;
-  denoiseStrength: number;   // 0.35–0.85
+  denoiseStrength: number;   // 0.35–0.85 (restyle) or prompt_strength 0–1 (stage)
+  mode: StyleMode;           // 'stage' or 'restyle'
 }
 
 export interface RestyleResult {
@@ -178,8 +180,8 @@ export async function generateRestyle(request: RestyleRequest): Promise<RestyleR
     throw new Error('Replicate API key not configured. Add your key in settings.');
   }
 
-  const prompt = buildPrompt(request.stylePresetId, request.customModifiers);
-  const negativePrompt = DEFAULT_NEGATIVE_PROMPT;
+  const prompt = buildPrompt(request.stylePresetId, request.mode, request.customModifiers);
+  const negativePrompt = getNegativePrompt(request.mode);
 
   // Step 1: Create prediction via the Vercel proxy
   const resp = await fetch(API_ENDPOINT, {
@@ -193,6 +195,7 @@ export async function generateRestyle(request: RestyleRequest): Promise<RestyleR
       prompt,
       negative_prompt: negativePrompt,
       denoise_strength: request.denoiseStrength,
+      mode: request.mode,
     }),
   });
 
