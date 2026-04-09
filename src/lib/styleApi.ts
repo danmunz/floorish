@@ -93,8 +93,6 @@ export async function insertStyleGeneration(gen: {
   error_message?: string | null;
   mode?: string | null;
 }): Promise<StyleGeneration> {
-  error_message?: string | null;
-}): Promise<StyleGeneration> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase
     .from('style_generations')
