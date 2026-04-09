@@ -18,6 +18,8 @@ A browser-based floor plan studio for arranging furniture to scale. Drop in a fl
 - **Measurement tool** — Measure distances between any two points in calibrated feet/inches
 - **Share projects** — Generate read-only share links for collaborators and clients
 - **Undo/redo** — Full history with `⌘Z` / `⌘⇧Z`
+- **Room regions** — Draw polygon outlines on the floor plan to define rooms; assign uploaded photos to specific rooms for organized style visualization
+- **AI Style Visualizer** — Upload room photos, organize them by room region, and re-render them in different interior design styles (Japandi, Mid-Century Modern, Industrial, Coastal, and more) powered by Replicate's ControlNet models. BYOK: bring your own Replicate API key.
 
 ## Getting Started
 
@@ -30,10 +32,21 @@ npm run dev
 ### Supabase Setup
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Run the migration: `supabase db push` (or apply `supabase/migrations/20260324000000_initial_schema.sql` via the SQL editor)
+2. Run all migrations: `supabase db push` (or apply each file under `supabase/migrations/` via the SQL editor — this includes the initial schema and the `20260331000000_rooms.sql` rooms migration)
 3. Enable Google OAuth in Authentication → Providers → Google
-4. Create a Storage bucket named `floor-plans` (private)
-5. Copy your project URL and anon key to `.env.local`
+4. Create Storage buckets: `floor-plans` (private), `room-photos` (private), `style-results` (private)
+5. Add RLS policies for the private storage buckets. Run in the Supabase SQL editor:
+   ```sql
+   -- room-photos bucket policies
+   create policy "Users can upload room photos" on storage.objects for insert to authenticated with check (bucket_id = 'room-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can read own room photos" on storage.objects for select to authenticated using (bucket_id = 'room-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can delete own room photos" on storage.objects for delete to authenticated using (bucket_id = 'room-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+   -- style-results bucket policies
+   create policy "Users can upload style results" on storage.objects for insert to authenticated with check (bucket_id = 'style-results' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can read own style results" on storage.objects for select to authenticated using (bucket_id = 'style-results' and (storage.foldername(name))[1] = auth.uid()::text);
+   create policy "Users can delete own style results" on storage.objects for delete to authenticated using (bucket_id = 'style-results' and (storage.foldername(name))[1] = auth.uid()::text);
+   ```
+6. Copy your project URL and anon key to `.env.local`
 
 When adding new schema changes, commit SQL files under `supabase/migrations` and apply them with `supabase db push` in each environment.
 
@@ -101,6 +114,7 @@ Restore drill checklist (run monthly in a non-prod project):
 | `V` / `Esc` | Select tool |
 | `M` | Measure tool |
 | `P` | Draw polygon tool |
+| `R` | Style visualizer |
 | `G` | Toggle grid |
 | `S` | Toggle snap |
 | `⌘D` | Duplicate selected |

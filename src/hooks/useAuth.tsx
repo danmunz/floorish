@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { clearReplicateApiKey, loadReplicateApiKeyFromProfile } from '../lib/styleEngine';
 
 interface AuthContextValue {
   user: User | null;
@@ -39,6 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
+      if (s?.user) {
+        void loadReplicateApiKeyFromProfile(s.user.id);
+      }
       setLoading(false);
     });
 
@@ -49,6 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       setIsGuest(false);
+      if (s?.user) {
+        void loadReplicateApiKeyFromProfile(s.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -65,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    clearReplicateApiKey();
     setUser(null);
     setSession(null);
   }, []);

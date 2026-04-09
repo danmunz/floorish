@@ -12,6 +12,7 @@ import { AuthGate } from './components/AuthGate';
 import { ProjectPicker } from './components/ProjectPicker';
 import { UserMenu } from './components/UserMenu';
 import { SharedView } from './components/SharedView';
+import { StylePanel } from './components/StylePanel';
 import { useCloudPersistence } from './hooks/useCloudPersistence';
 import { uploadFloorPlanImage } from './lib/storage';
 import { createProject, fetchProjects, updateProject } from './lib/api';
@@ -253,6 +254,7 @@ function AppInner() {
       if (e.key === 'v' || e.key === 'Escape') { dispatch({ type: 'SET_TOOL_MODE', payload: 'select' }); return; }
       if (e.key === 'm') { dispatch({ type: 'SET_TOOL_MODE', payload: 'measure' }); return; }
       if (e.key === 'p') { dispatch({ type: 'SET_TOOL_MODE', payload: 'draw-polygon' }); return; }
+      if (e.key === 'r') { dispatch({ type: 'SET_TOOL_MODE', payload: 'style' }); return; }
       if (e.key === 'g') { dispatch({ type: 'TOGGLE_GRID' }); return; }
       if (e.key === 's' && !meta) { dispatch({ type: 'TOGGLE_SNAP' }); return; }
     },
@@ -375,8 +377,17 @@ function AppInner() {
       ) : (
         <div className="app-body">
           <aside className="sidebar">
-            <CalibrationPanel />
-            <FurniturePalette />
+            {(state.toolMode === 'style' || state.toolMode === 'draw-room') ? (
+              <StylePanel
+                projectId={projectId}
+                floorPlanId={state.activeFloorPlanId}
+              />
+            ) : (
+              <>
+                <CalibrationPanel />
+                <FurniturePalette />
+              </>
+            )}
           </aside>
           <main className="main-canvas">
             <Canvas ref={canvasRef} />

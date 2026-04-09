@@ -5,7 +5,7 @@ import { useAppState } from '../hooks/useAppState';
 import { FurnitureItem } from './FurnitureItem';
 import { inchesToPixels, pixelDistance, formatFeetInches, snapToGridValue } from '../utils/geometry';
 import { v4 as uuid } from 'uuid';
-import type { PlacedFurniture } from '../types';
+import type { PlacedFurniture, Room } from '../types';
 
 export interface CanvasHandle {
   stage: Konva.Stage | null;
@@ -134,6 +134,12 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
         return;
       }
 
+      // Draw room mode
+      if (state.toolMode === 'draw-room') {
+        dispatch({ type: 'ADD_DRAW_VERTEX', payload: pos });
+        return;
+      }
+
       // Place furniture mode
       if (state.toolMode === 'place' && state.placingPreset && ppf) {
         const w = inchesToPixels(state.placingPreset.widthIn, ppf);
@@ -163,28 +169,29 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
         const clickedOnEmpty = e.target === e.target.getStage() || e.target.attrs.id === 'floor-image';
         if (clickedOnEmpty) {
           dispatch({ type: 'SELECT_FURNITURE', payload: null });
+          dispatch({ type: 'SELECT_ROOM', payload: null });
         }
       }
     },
     [state.toolMode, state.calibration.points.length, state.placingPreset, ppf, state.activeFloorPlanId, pointerToImageCoords, dispatch]
   );
 
-  // Double-click to close polygon
+  // Double-click to close polygon or room
   const handleDblClick = useCallback(() => {
-    if (state.toolMode === 'draw-polygon' && state.drawPolygon.vertices.length >= 3 && ppf && state.activeFloorPlanId) {
-      const verts = state.drawPolygon.vertices;
-      const xs = verts.map(v => v.x);
-      const ys = verts.map(v => v.y);
-      const minX = Math.min(...xs);
-      const minY = Math.min(...ys);
-      const maxX = Math.max(...xs);
-      const maxY = Math.max(...ys);
-      const w = maxX - minX;
-      const h = maxY - minY;
+    if (state.drawPolygon.vertices.length < 3 || !state.activeFloorPlanId) return;
 
-      // Normalize vertices relative to bounding box (0–1 range) for storage
-      const normalizedVerts = verts.flatMap(v => [(v.x - minX) / (w || 1), (v.y - minY) / (h || 1)]);
+    const verts = state.drawPolygon.vertices;
+    const xs = verts.map(v => v.x);
+    const ys = verts.map(v => v.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const maxX = Math.max(...xs);
+    const maxY = Math.max(...ys);
+    const w = maxX - minX;
+    const h = maxY - minY;
+    const normalizedVerts = verts.flatMap(v => [(v.x - minX) / (w || 1), (v.y - minY) / (h || 1)]);
 
+    if (state.toolMode === 'draw-polygon' && ppf) {
       const newItem: PlacedFurniture = {
         id: uuid(),
         presetId: null,
@@ -202,8 +209,31 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
       };
       dispatch({ type: 'ADD_FURNITURE', payload: newItem });
       dispatch({ type: 'FINISH_DRAW_POLYGON' });
+    } else if (state.toolMode === 'draw-room') {
+      const roomName = window.prompt('Room name:', 'Room');
+      if (!roomName) {
+        dispatch({ type: 'FINISH_DRAW_ROOM' });
+        return;
+      }
+      // Cycle through room colors
+      const ROOM_COLORS = ['#5B8C6B', '#6B7B9E', '#9E7B6B', '#8B6B9E', '#6B9E9E', '#9E8B6B', '#6B8B9E', '#9E6B8B'];
+      const colorIndex = state.rooms.length % ROOM_COLORS.length;
+
+      const newRoom: Room = {
+        id: uuid(),
+        name: roomName,
+        color: ROOM_COLORS[colorIndex],
+        vertices: normalizedVerts,
+        x: minX,
+        y: minY,
+        widthPx: w,
+        heightPx: h,
+        floorPlanId: state.activeFloorPlanId,
+      };
+      dispatch({ type: 'ADD_ROOM', payload: newRoom });
+      dispatch({ type: 'FINISH_DRAW_ROOM' });
     }
-  }, [state.toolMode, state.drawPolygon.vertices, ppf, state.activeFloorPlanId, dispatch]);
+  }, [state.toolMode, state.drawPolygon.vertices, ppf, state.activeFloorPlanId, state.rooms.length, dispatch]);
 
   // Grid lines
   const gridLines = [];
@@ -259,21 +289,71 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
   }
 
   // Draw polygon preview
+  const polygonPreviewColor = state.toolMode === 'draw-room' ? '#5B8C6B' : '#E040FB';
   const polygonPreview = [];
   if (state.drawPolygon.vertices.length > 0) {
     const flatPts = state.drawPolygon.vertices.flatMap(v => [v.x, v.y]);
     polygonPreview.push(
-      <Line key="poly-lines" points={flatPts} stroke="#E040FB" strokeWidth={2 / state.stageScale} dash={[5 / state.stageScale, 3 / state.stageScale]} />
+      <Line key="poly-lines" points={flatPts} stroke={polygonPreviewColor} strokeWidth={2 / state.stageScale} dash={[5 / state.stageScale, 3 / state.stageScale]} />
     );
     state.drawPolygon.vertices.forEach((v, i) =>
       polygonPreview.push(
-        <Circle key={`pv-${i}`} x={v.x} y={v.y} radius={5 / state.stageScale} fill="#E040FB" stroke="#fff" strokeWidth={1.5 / state.stageScale} />
+        <Circle key={`pv-${i}`} x={v.x} y={v.y} radius={5 / state.stageScale} fill={polygonPreviewColor} stroke="#fff" strokeWidth={1.5 / state.stageScale} />
       )
     );
   }
 
   // Furniture items for current floor
   const currentFurniture = state.furniture.filter(f => f.floorPlanId === state.activeFloorPlanId);
+
+  // Room regions for current floor
+  const currentRooms = state.rooms.filter(r => r.floorPlanId === state.activeFloorPlanId);
+
+  // Room region overlays
+  const roomOverlays = currentRooms.map(room => {
+    const isSelected = state.selectedRoomId === room.id;
+    const verts = room.vertices;
+    // Convert normalized vertices back to absolute coordinates
+    const absPoints: number[] = [];
+    for (let i = 0; i < verts.length; i += 2) {
+      absPoints.push(room.x + verts[i] * room.widthPx);
+      absPoints.push(room.y + verts[i + 1] * room.heightPx);
+    }
+    // Close the polygon
+    if (absPoints.length >= 4) {
+      absPoints.push(absPoints[0], absPoints[1]);
+    }
+
+    // Calculate centroid for label placement
+    const cx = room.x + room.widthPx / 2;
+    const cy = room.y + room.heightPx / 2;
+
+    return (
+      <Group key={`room-${room.id}`}>
+        <Line
+          points={absPoints}
+          fill={isSelected ? `${room.color}40` : `${room.color}20`}
+          stroke={isSelected ? room.color : `${room.color}80`}
+          strokeWidth={(isSelected ? 2.5 : 1.5) / state.stageScale}
+          closed={true}
+          onClick={() => dispatch({ type: 'SELECT_ROOM', payload: room.id })}
+          onTap={() => dispatch({ type: 'SELECT_ROOM', payload: room.id })}
+          listening={state.toolMode === 'style' || state.toolMode === 'select'}
+        />
+        <Text
+          x={cx}
+          y={cy}
+          text={room.name}
+          fontSize={13 / state.stageScale}
+          fill={room.color}
+          fontStyle="bold"
+          offsetX={room.name.length * 3.2 / state.stageScale}
+          offsetY={6 / state.stageScale}
+          listening={false}
+        />
+      </Group>
+    );
+  });
 
   // Snap helper
   const snapPos = useCallback(
@@ -290,6 +370,7 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
     state.toolMode === 'calibrate' ? 'crosshair' :
     state.toolMode === 'measure' ? 'crosshair' :
     state.toolMode === 'draw-polygon' ? 'crosshair' :
+    state.toolMode === 'draw-room' ? 'crosshair' :
     state.toolMode === 'export-select' ? 'crosshair' :
     state.toolMode === 'place' ? 'cell' :
     'default';
@@ -402,6 +483,11 @@ export const Canvas = forwardRef<CanvasHandle>(function Canvas(_props, ref) {
 
         {/* Grid layer */}
         <Layer listening={false}>{gridLines}</Layer>
+
+        {/* Room overlay layer */}
+        <Layer>
+          {roomOverlays}
+        </Layer>
 
         {/* Furniture layer */}
         <Layer>

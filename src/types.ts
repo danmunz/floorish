@@ -42,7 +42,19 @@ export interface PlacedFurniture {
   locked: boolean;
 }
 
-export type ToolMode = 'select' | 'calibrate' | 'measure' | 'draw-polygon' | 'place' | 'export-select';
+export interface Room {
+  id: string;
+  name: string;
+  color: string;
+  vertices: number[];    // flat normalized array [x1,y1,x2,y2,...] in 0-1 range (same as polygon furniture)
+  x: number;             // bounding box origin (canvas px)
+  y: number;
+  widthPx: number;
+  heightPx: number;
+  floorPlanId: string;
+}
+
+export type ToolMode = 'select' | 'calibrate' | 'measure' | 'draw-polygon' | 'draw-room' | 'place' | 'export-select' | 'style';
 
 export interface ExportSelection {
   start: Point | null;
@@ -88,6 +100,8 @@ export interface AppState {
   gridSizeIn: number; // grid cell size in inches (default 12 = 1ft)
   snapToGrid: boolean;
   placingPreset: FurniturePreset | null;
+  rooms: Room[];
+  selectedRoomId: string | null;
   stagePos: Point;
   stageScale: number;
 }
@@ -123,4 +137,9 @@ export type AppAction =
   | { type: 'LOAD_STATE'; payload: Partial<AppState> }
   | { type: 'DUPLICATE_FURNITURE'; payload: string }
   | { type: 'SET_EXPORT_SELECTION'; payload: ExportSelection }
-  | { type: 'CLEAR_EXPORT_SELECTION' };
+  | { type: 'CLEAR_EXPORT_SELECTION' }
+  | { type: 'ADD_ROOM'; payload: Room }
+  | { type: 'UPDATE_ROOM'; payload: { id: string; updates: Partial<Room> } }
+  | { type: 'REMOVE_ROOM'; payload: string }
+  | { type: 'SELECT_ROOM'; payload: string | null }
+  | { type: 'FINISH_DRAW_ROOM' };

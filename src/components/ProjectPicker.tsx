@@ -11,6 +11,7 @@ import {
   dbFurnitureToApp,
   type Project,
 } from '../lib/api';
+import { fetchRooms, dbRoomToApp } from '../lib/roomApi';
 import { getFloorPlanImageUrl, uploadFloorPlanImage } from '../lib/storage';
 import { useAppState } from '../hooks/useAppState';
 import { usePersistence } from '../hooks/usePersistence';
@@ -135,12 +136,22 @@ export function ProjectPicker({ onProjectLoaded }: ProjectPickerProps) {
         .flat()
         .map((row: Record<string, unknown>) => dbFurnitureToApp(row));
 
+      // Load rooms for all floor plans
+      const allRooms = (
+        await Promise.all(
+          fpRows.map((fp: Record<string, unknown>) => fetchRooms(fp.id as string))
+        )
+      )
+        .flat()
+        .map((row) => dbRoomToApp(row));
+
       // Hydrate state
       dispatch({
         type: 'LOAD_STATE',
         payload: {
           floorPlans,
           furniture: allFurniture,
+          rooms: allRooms,
           activeFloorPlanId: floorPlans[0]?.id ?? null,
           showGrid: project.settings.showGrid,
           gridSizeIn: project.settings.gridSizeIn,
